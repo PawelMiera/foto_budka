@@ -7,14 +7,19 @@ import cv2
 import time
 import platform
 import yaml
-#import picamera
-# import RPi.GPIO as gpio
+
+if platform.architecture()[0] != '64bit':
+    import picamera
+    import RPi.GPIO as gpio
+    from picamera.array import PiRGBArray
+
 
 class ImageReader(QThread):
     ImageUpdate = pyqtSignal(QImage)
 
-    def __init__(self, width, height, camera_flip):
+    def __init__(self, width, height, camera_flip, camera_rotation):
         super().__init__()
+        self.camera_rotation = camera_rotation
         self.camera_flip = camera_flip
         self.height = height
         self.current_frame = None
@@ -23,19 +28,25 @@ class ImageReader(QThread):
     def run(self):
         self.ThreadActive = True
 
-        # CAMERA = picamera.PiCamera()
-        # CAMERA.rotation = CAMERA_ROTATION
-        # CAMERA.annotate_text_size = 80
-        # CAMERA.resolution = (PHOTO_W, PHOTO_H)
-        # CAMERA.hflip = CAMERA_HFLIP
-        # cap = cv2.VideoCapture(0)
+        if platform.architecture()[0] != '64bit':
+            camera = picamera.PiCamera()
+            camera.rotation = self.camera_rotation
+            camera.annotate_text_size = 80
+            camera.resolution = (self.width, self.height)
+            camera.hflip = self.camera_flip
+            cap = PiRGBArray(camera)
+
         id = 0
         last_time = time.time()
         while self.ThreadActive:
-            # ret, frame = cap.read()
-            ret = True
-            frame = cv2.imread("0.jpg")
-            if ret:
+            if platform.architecture()[0] != '64bit':
+                camera.capture(cap, format="bgr")
+                frame = cap.array
+            else:
+                frame = cv2.imread("0.jpg")
+                ret = True
+
+            if frame is not None:
                 self.current_frame = frame
                 if time.time() - last_time > 1:
                     print(id)
@@ -62,7 +73,7 @@ class FotoBudka(QDialog):
 
         self.showFullScreen()
 
-        self.image_reader = ImageReader(1280, 720, False)
+        self.image_reader = ImageReader(1280, 720, 0, 0)
         self.image_reader.ImageUpdate.connect(self.ImageViewUpdate)
         self.image_reader.start()
 
