@@ -58,6 +58,8 @@ class ImageReader(QThread):
                     img_qt = ConvertToQtFormat.scaled(1280, 720, Qt.KeepAspectRatio)
                     self.ImageUpdate.emit(img_qt)
 
+                cap.truncate(0)
+
         else:
             while self.ThreadActive:
                 frame = cv2.imread("0.jpg")
