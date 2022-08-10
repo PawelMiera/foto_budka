@@ -14,6 +14,8 @@ class FotoBudka(QDialog):
 
         self.setWindowTitle('Fotobudka')
 
+        self.showFullScreen()
+
 
 
 
