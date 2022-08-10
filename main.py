@@ -25,6 +25,7 @@ class ImageReader(QThread):
                     print(id)
                     id =0
                     last_time = time.time()
+                    print(frame.shape)
                 id +=1
                 img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
