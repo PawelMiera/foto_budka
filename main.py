@@ -28,6 +28,9 @@ class ImageReader(QThread):
     def run(self):
         self.ThreadActive = True
 
+        id = 0
+        last_time = time.time()
+
         if platform.architecture()[0] != '64bit':
             camera = picamera.PiCamera()
             camera.rotation = self.camera_rotation
@@ -36,28 +39,41 @@ class ImageReader(QThread):
             camera.hflip = self.camera_flip
             cap = PiRGBArray(camera)
 
-        id = 0
-        last_time = time.time()
-        while self.ThreadActive:
-            if platform.architecture()[0] != '64bit':
-                camera.capture(cap, format="bgr")
-                frame = cap.array
-            else:
-                frame = cv2.imread("0.jpg")
-                ret = True
+            for frame_picamera in camera.capture_continuous(cap, format="bgr", use_video_port=True):
+                if not self.ThreadActive:
+                    break
+                frame = frame_picamera.array
 
-            if frame is not None:
                 self.current_frame = frame
+
                 if time.time() - last_time > 1:
                     print(id)
                     id =0
                     last_time = time.time()
-                    print(frame.shape)
-                id +=1
-                img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                img_qt = ConvertToQtFormat.scaled(1280, 720, Qt.KeepAspectRatio)
-                self.ImageUpdate.emit(img_qt)
+
+                if frame is not None:
+                    id += 1
+                    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+                    img_qt = ConvertToQtFormat.scaled(1280, 720, Qt.KeepAspectRatio)
+                    self.ImageUpdate.emit(img_qt)
+
+        else:
+            while self.ThreadActive:
+                frame = cv2.imread("0.jpg")
+
+                if time.time() - last_time > 1:
+                    print(id)
+                    id =0
+                    last_time = time.time()
+
+                if frame is not None:
+                    id += 1
+                    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+                    img_qt = ConvertToQtFormat.scaled(1280, 720, Qt.KeepAspectRatio)
+                    self.ImageUpdate.emit(img_qt)
+
 
     def stop(self):
         self.ThreadActive = False
