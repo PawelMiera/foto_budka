@@ -13,11 +13,11 @@ class ImageReader(QThread):
 
     def run(self):
         self.ThreadActive = True
-        # Capture = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(0)
         while self.ThreadActive:
-            # ret, frame = Capture.read()
-            ret = True
-            frame = cv2.imread("0.jpg")
+            ret, frame = cap.read()
+            # ret = True
+            # frame = cv2.imread("0.jpg")
             if ret:
                 img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
