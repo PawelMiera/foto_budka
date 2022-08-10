@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication, QDialog
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.uic import loadUi
 import cv2
-
+import time
 
 # import RPi.GPIO as gpio
 
@@ -14,14 +14,21 @@ class ImageReader(QThread):
     def run(self):
         self.ThreadActive = True
         cap = cv2.VideoCapture(0)
+        id = 0
+        last_time = time.time()
         while self.ThreadActive:
             ret, frame = cap.read()
             # ret = True
             # frame = cv2.imread("0.jpg")
             if ret:
+                if time.time() - last_time > 1:
+                    print(id)
+                    id =0
+                    last_time = time.time()
+                id +=1
                 img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                img_qt = ConvertToQtFormat.scaled(1920, 1080, Qt.KeepAspectRatio)
+                img_qt = ConvertToQtFormat.scaled(1280, 720, Qt.KeepAspectRatio)
                 self.ImageUpdate.emit(img_qt)
 
     def stop(self):
