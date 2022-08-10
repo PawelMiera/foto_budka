@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1280</width>
-    <height>720</height>
+    <width>1920</width>
+    <height>1080</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QLabel" name="label">
+  <widget class="QLabel" name="text_info">
    <property name="geometry">
     <rect>
      <x>380</x>
@@ -26,6 +26,21 @@
     <string>XDDDDDDDDDDDDDDDDDDDDDD</string>
    </property>
   </widget>
+  <widget class="QLabel" name="image_view">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1920</width>
+     <height>1080</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <zorder>image_view</zorder>
+  <zorder>text_info</zorder>
  </widget>
  <resources/>
  <connections/>
