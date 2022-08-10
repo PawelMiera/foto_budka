@@ -101,6 +101,8 @@ class ImageReader(QThread):
         self.frame_3 = None
         self.background = cv2.imread("background.png")
 
+        self.output_image = None
+
         self.img_id = 0
 
         self.last_dir_id = 0
@@ -136,11 +138,11 @@ class ImageReader(QThread):
             elif self.img_id == 2:
                 self.frame_3 = self.current_frame.copy()
                 self.img_id += 1
-
-            if self.img_id >= 2:
-                self.img_id = 0
         else:
             print("Missing camera image!")
+
+        if self.img_id >= 3:
+            self.img_id = 0
 
     def save_all_frames(self):
         current_dir = os.path.join(self.save_dir, str(self.last_dir_id))
@@ -152,15 +154,24 @@ class ImageReader(QThread):
             cv2.imwrite(os.path.join(current_dir, "2.png"), self.frame_2)
         if self.frame_3 is not None:
             cv2.imwrite(os.path.join(current_dir, "3.png"), self.frame_3)
+        if self.output_image is not None:
+            cv2.imwrite(os.path.join(current_dir, "razem.png"), self.output_image)
         self.last_dir_id += 1
 
 
 
-    def get_full_image(self):
-        img = self.background.copy()
+    def get_output_image(self):
+        self.output_image = self.background.copy()
 
+        f1 = cv2.resize(self.frame_1, (520, 293))
+        f2 = cv2.resize(self.frame_2, (520, 293))
+        f3 = cv2.resize(self.frame_3, (520, 293))
 
-        return img
+        self.output_image[251:251+293, 47:47+520] = f1
+        self.output_image[629:629+293, 47:47+520] = f2
+        self.output_image[1013:1013+293, 47:47+520] = f3
+
+        return self.output_image.copy()
 
 
 
@@ -243,8 +254,8 @@ class FotoBudka(QDialog):
         self.img_width = 1080
         self.img_height = 607
 
-        self.output_image_display_width =
-        self.output_image_display_height =
+        self.output_image_display_width = 460
+        self.output_image_display_height = 1310
 
         self.fotobudka = cv2.imread("fotobudka.png")
         self.get_ready = cv2.imread("get_ready.png")
@@ -282,25 +293,31 @@ class FotoBudka(QDialog):
 
             self.current_state += 1
 
-            self.sleep(5000)
+            self.sleep(1000)
 
             self.countdown_shower.start_counting()
 
         elif self.current_state == 3:
+            self.image_reader.capture()
             self.image_reader.stop_showing()
             self.top_image_view.setVisible(False)
             self.mid_image_view.setVisible(False)
             self.output_image_view.setVisible(True)
 
-            img = self.image_reader.get_full_image()
-
-
-            img = cv2.cvtColor(self.get_ready, cv2.COLOR_BGR2RGB)
+            img = cv2.cvtColor(self.press_button, cv2.COLOR_BGR2RGB)
             ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-            get_ready_image = ConvertToQtFormat.scaled(self.img_width, self.img_height, Qt.KeepAspectRatio)
+            press_button_image = ConvertToQtFormat.scaled(self.img_width, self.img_height, Qt.KeepAspectRatio)
+            self.bot_image_view.setPixmap(QPixmap.fromImage(press_button_image))
 
+            img = self.image_reader.get_output_image()
 
+            img = cv2.resize(img, (self.output_image_display_width, self.output_image_display_height))
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+            output_image = ConvertToQtFormat.scaled(self.output_image_display_width, self.output_image_display_height, Qt.KeepAspectRatio)
+            self.output_image_view.setPixmap(QPixmap.fromImage(output_image))
 
+            self.image_reader.save_all_frames()
 
 
     def CountdownUpdate(self, Image):
@@ -352,12 +369,11 @@ class FotoBudka(QDialog):
 
                 self.bot_image_view.setPixmap(QPixmap.fromImage(get_ready_image))
 
-                self.sleep(5000)
+                self.sleep(1000)
 
                 self.countdown_shower.start_counting()
 
                 self.current_state += 1
-
 
         elif event.key() == Qt.Key_E:
             self.bot_image_view.setVisible(False)
