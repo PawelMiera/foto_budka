@@ -5,22 +5,38 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.uic import loadUi
 import cv2
 import time
-
+import platform
+import yaml
+#import picamera
 # import RPi.GPIO as gpio
 
 class ImageReader(QThread):
     ImageUpdate = pyqtSignal(QImage)
 
+    def __init__(self, width, height, camera_flip):
+        super().__init__()
+        self.camera_flip = camera_flip
+        self.height = height
+        self.current_frame = None
+        self.width = width
+
     def run(self):
         self.ThreadActive = True
-        cap = cv2.VideoCapture(0)
+
+        # CAMERA = picamera.PiCamera()
+        # CAMERA.rotation = CAMERA_ROTATION
+        # CAMERA.annotate_text_size = 80
+        # CAMERA.resolution = (PHOTO_W, PHOTO_H)
+        # CAMERA.hflip = CAMERA_HFLIP
+        # cap = cv2.VideoCapture(0)
         id = 0
         last_time = time.time()
         while self.ThreadActive:
-            ret, frame = cap.read()
-            # ret = True
-            # frame = cv2.imread("0.jpg")
+            # ret, frame = cap.read()
+            ret = True
+            frame = cv2.imread("0.jpg")
             if ret:
+                self.current_frame = frame
                 if time.time() - last_time > 1:
                     print(id)
                     id =0
@@ -46,9 +62,13 @@ class FotoBudka(QDialog):
 
         self.showFullScreen()
 
-        self.image_reader = ImageReader()
+        self.image_reader = ImageReader(1280, 720, False)
         self.image_reader.ImageUpdate.connect(self.ImageViewUpdate)
         self.image_reader.start()
+
+        print(platform.architecture())
+
+
 
     def ImageViewUpdate(self, Image):
         self.image_view.setPixmap(QPixmap.fromImage(Image))
