@@ -292,14 +292,14 @@ class ImageReader(QThread):
 class FotoBudka(QDialog):
     def __init__(self):
         super(FotoBudka, self).__init__()
-        loadUi('fotobudka.ui', self)
+        loadUi('fotobudka_hd.ui', self)
 
         self.setWindowTitle('Fotobudka')
 
         self.showFullScreen()
 
-        self.img_width = 1080
-        self.img_height = 607
+        self.img_width = 720
+        self.img_height = 405
 
         self.wait_before_countdown = 5000
 
