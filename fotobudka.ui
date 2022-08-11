@@ -108,6 +108,9 @@
      <height>10000</height>
     </size>
    </property>
+   <property name="styleSheet">
+    <string notr="true"/>
+   </property>
    <property name="frameShape">
     <enum>QFrame::NoFrame</enum>
    </property>
@@ -115,7 +118,10 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>press_button.png</pixmap>
+    <pixmap>black.png</pixmap>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
    </property>
   </widget>
   <widget class="QLabel" name="output_image_view">
@@ -149,10 +155,50 @@
     <pixmap>background.png</pixmap>
    </property>
   </widget>
+  <widget class="QLabel" name="top_text">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1080</width>
+     <height>607</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgba(255, 255, 255, 0)</string>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="bot_text">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>1313</y>
+     <width>1080</width>
+     <height>607</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgba(255, 255, 255, 0)</string>
+   </property>
+   <property name="text">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:100pt; font-weight:600; color:#ffffff;&quot;&gt;&lt;br/&gt;Wciśnij przycisk, aby rozpocząć&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
+   <property name="wordWrap">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>top_image_view</zorder>
   <zorder>mid_image_view</zorder>
   <zorder>bot_image_view</zorder>
+  <zorder>top_text</zorder>
   <zorder>output_image_view</zorder>
+  <zorder>bot_text</zorder>
  </widget>
  <resources/>
  <connections/>
