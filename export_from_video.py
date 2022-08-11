@@ -1,7 +1,7 @@
 import cv2
 import time
 
-cap = cv2.VideoCapture('countdown.mp4')
+cap = cv2.VideoCapture('count_5_smaller.mp4')
 
 id = 0
 ind = 0
@@ -9,6 +9,8 @@ ind = 0
 while(cap.isOpened()):
 
   ret, frame = cap.read()
+
+
   last_time = time.time()
   t = 1/15
   if ret == True:
@@ -32,6 +34,9 @@ while(cap.isOpened()):
   # Break the loop
   else:
     break
+
+
+print(id)
 
 # When everything done, release the video capture object
 cap.release()

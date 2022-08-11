@@ -33,12 +33,13 @@ class CountdownShower(QThread):
 
         self.images = []
 
-        for i in range(images_count):
-            frame = cv2.imread("countdown/" + str(i) + ".jpg")
-            self.images.append(frame)
+        # for i in range(images_count):
+        #     frame = cv2.imread("countdown/" + str(i) + ".jpg")
+        #     self.images.append(frame)
 
     def start_counting(self):
         self.start_countdown = True
+        self.cap = cv2.VideoCapture('count_5_smaller.mp4')
 
     def stop_counting(self):
         self.start_countdown = False
@@ -49,27 +50,54 @@ class CountdownShower(QThread):
         while self.ThreadActive:
 
             if self.start_countdown:
-                for i in range(len(self.images)):
+                while self.cap.isOpened():
                     if not self.start_countdown:
                         break
+                    ret, frame = self.cap.read()
+                    if ret == True:
+                        s = time.time()
+                        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-                    s = time.time()
-                    img = cv2.cvtColor(self.images[i], cv2.COLOR_BGR2RGB)
+                        ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+                        img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
+                        self.ImageUpdate.emit(img_qt)
+                        elapsed = time.time() - s
+                        delta = self.t - elapsed
 
-                    ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                    img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
-                    self.ImageUpdate.emit(img_qt)
+                        if delta > 0:
+                            loop = QEventLoop()
+                            QTimer.singleShot(int(delta * 1000), loop.quit)
+                            loop.exec_()
 
-                    elapsed = time.time() - s
-                    delta = self.t - elapsed
-
-                    if delta > 0:
-                        loop = QEventLoop()
-                        QTimer.singleShot(int(delta * 1000), loop.quit)
-                        loop.exec_()
+                    # Break the loop
+                    else:
+                        break
                 self.EndSignal.emit()
-
                 self.start_countdown = False
+
+                self.cap.release()
+
+                # for i in range(len(self.images)):
+                #     if not self.start_countdown:
+                #         break
+                #
+                #     s = time.time()
+                #     img = cv2.cvtColor(self.images[i], cv2.COLOR_BGR2RGB)
+                #
+                #     ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+                #     img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
+                #     self.ImageUpdate.emit(img_qt)
+                #
+                #     elapsed = time.time() - s
+                #     delta = self.t - elapsed
+                #
+                #     if delta > 0:
+                #         loop = QEventLoop()
+                #         QTimer.singleShot(int(delta * 1000), loop.quit)
+                #         loop.exec_()
+                # self.EndSignal.emit()
+                #
+                # self.start_countdown = False
 
             loop = QEventLoop()
             QTimer.singleShot(100, loop.quit)
@@ -268,7 +296,7 @@ class FotoBudka(QDialog):
         self.image_reader.ImageUpdate.connect(self.ImageViewUpdate)
         self.image_reader.start()
 
-        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 20)
+        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 237)
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
