@@ -130,7 +130,7 @@
      <x>100</x>
      <y>0</y>
      <width>460</width>
-     <height>1310</height>
+     <height>860</height>
     </rect>
    </property>
    <property name="minimumSize">
@@ -187,7 +187,7 @@
     <string notr="true">background-color: rgba(255, 255, 255, 0)</string>
    </property>
    <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:100pt; font-weight:600; color:#ffffff;&quot;&gt;&lt;br/&gt;Wciśnij przycisk, aby rozpocząć&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:70pt; font-weight:600; color:#ffffff;&quot;&gt;&lt;br/&gt;Wciśnij przycisk, aby rozpocząć&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="wordWrap">
     <bool>true</bool>

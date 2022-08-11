@@ -27,7 +27,6 @@ class CountdownShower(QThread):
         self.height = height
         self.width = width
         self.last_dir_id = 0
-
         self.t = 5 / images_count
 
         self.start_countdown = False
@@ -315,7 +314,7 @@ class FotoBudka(QDialog):
         self.image_reader.ImageUpdate.connect(self.ImageViewUpdate)
         self.image_reader.start()
 
-        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 240)
+        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 80)
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
@@ -382,7 +381,7 @@ class FotoBudka(QDialog):
 
             self.image_reader.save_all_frames()
 
-            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować<br>Poczekaj 10 sekund,<br> aby anulować", 80)
+            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować<br>Poczekaj 10 sekund,<br> aby anulować", 55)
 
             print("Start Timer")
 
@@ -403,9 +402,9 @@ class FotoBudka(QDialog):
 
     def set_top_text(self, text):
         self.top_text.setText(
-            "<html><head/><body><p align=\"center\"><span style=\" font-size:100pt; font-weight:600; color:#ffffff;\"> " + text + "</span></p></body></html>")
+            "<html><head/><body><p align=\"center\"><span style=\" font-size:70pt; font-weight:600; color:#ffffff;\"> " + text + "</span></p></body></html>")
 
-    def set_bot_text(self, text, size=100):
+    def set_bot_text(self, text, size=70):
         self.bot_text.setText(
             "<html><head/><body><p align=\"center\"><span style=\" font-size:" + str(
                 size) + "pt; font-weight:600; color:#ffffff;\"> " + text + "</span></p></body></html>")
