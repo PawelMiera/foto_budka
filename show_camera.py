@@ -24,7 +24,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 	rawCapture.truncate(0)
 	if time.time() - last_time > 1:
 		last_time = time.time()
-		print(id)
+		print(id, frame.shape)
 		id = 0
 	id +=1
 	
