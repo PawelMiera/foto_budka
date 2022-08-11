@@ -9,6 +9,7 @@ import platform
 import yaml
 import os
 import random
+import cups
 
 if platform.architecture()[0] != '64bit':
     import picamera
@@ -31,15 +32,22 @@ class CountdownShower(QThread):
 
         self.start_countdown = False
 
-        self.images = []
+        self.cap = cv2.VideoCapture('count_5_cropped.mp4')
 
         # for i in range(images_count):
         #     frame = cv2.imread("countdown/" + str(i) + ".jpg")
         #     self.images.append(frame)
 
+    def reset(self):
+        self.load_cap()
+        self.start_countdown = False
+    def load_cap(self):
+        if self.cap is not None:
+            self.cap.release()
+        self.cap = cv2.VideoCapture('count_5_cropped.mp4')
+
     def start_counting(self):
         self.start_countdown = True
-        self.cap = cv2.VideoCapture('count_5_smaller.mp4')
 
     def stop_counting(self):
         self.start_countdown = False
@@ -75,8 +83,11 @@ class CountdownShower(QThread):
                 self.EndSignal.emit()
                 self.start_countdown = False
 
-                self.cap.release()
-
+                self.load_cap()
+            else:
+                loop = QEventLoop()
+                QTimer.singleShot(100, loop.quit)
+                loop.exec_()
                 # for i in range(len(self.images)):
                 #     if not self.start_countdown:
                 #         break
@@ -99,9 +110,6 @@ class CountdownShower(QThread):
                 #
                 # self.start_countdown = False
 
-            loop = QEventLoop()
-            QTimer.singleShot(100, loop.quit)
-            loop.exec_()
 
     def stop(self):
         self.ThreadActive = False
@@ -147,6 +155,15 @@ class ImageReader(QThread):
 
         self.save_all_frames()
 
+    def reset(self):
+        self.show = False
+        self.frame_1 = None
+        self.frame_2 = None
+        self.frame_3 = None
+        self.output_image = None
+        self.img_id = 0
+        self.output_image_path = ""
+
     def start_showing(self):
         self.show = True
 
@@ -154,7 +171,7 @@ class ImageReader(QThread):
         self.show = False
 
     def capture(self):
-        print("ca[ture")
+        print("CAPTURE!")
         if self.current_frame is not None:
             if self.img_id == 0:
                 self.frame_1 = self.current_frame.copy()
@@ -284,6 +301,8 @@ class FotoBudka(QDialog):
         self.img_width = 1080
         self.img_height = 607
 
+        self.wait_before_countdown = 5000
+
         self.output_image_display_width = 460
         self.output_image_display_height = 1310
 
@@ -305,10 +324,18 @@ class FotoBudka(QDialog):
         self.bop_texts = ["Nadchodzi", "Teraz", "Przybywa", "Już za chwilę", "Trzy, dwa, jeden", "Wkracza", "Wskakuje",
                           "Wlatuje"]
 
+        self.current_texts_top_id = []
+        self.current_texts_bot_id = []
+
+        self.timer = QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(10000)
+        self.timer.timeout.connect(self.timeout)
+
         self.reset()
 
     def countdown_end(self):
-
+        print("COUNTDOWN END")
         if self.current_state == 1 or self.current_state == 2:
             self.image_reader.capture()
 
@@ -318,17 +345,14 @@ class FotoBudka(QDialog):
             self.top_image_view.setPixmap(QPixmap.fromImage(black_image))
             self.bot_image_view.setPixmap(QPixmap.fromImage(black_image))
 
-            id = random.randint(0, len(self.top_texts) - 1)
+            self.set_top_text(self.top_texts[self.current_texts_top_id[self.current_state - 1]])
 
-            self.set_top_text(self.top_texts[id])
-
-            id = random.randint(0, len(self.bop_texts) - 1)
-
-            self.set_bot_text(self.bop_texts[id] + "<br>Zdjęcie nr " + str(self.current_state + 1))
+            self.set_bot_text(
+                self.bop_texts[self.current_texts_bot_id[self.current_state]] + "<br>Zdjęcie nr " + str(self.current_state + 1))
 
             self.current_state += 1
 
-            self.sleep(2000)
+            self.sleep(self.wait_before_countdown)
 
             self.set_top_text("")
             self.set_bot_text("")
@@ -360,6 +384,16 @@ class FotoBudka(QDialog):
 
             self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować<br>Poczekaj 10 sekund,<br> aby anulować", 80)
 
+            print("Start Timer")
+
+            self.current_state += 1
+
+            self.timer.start()
+
+    def timeout(self):
+        print("TIMEOUT")
+        self.reset()
+
     def CountdownUpdate(self, Image):
         self.bot_image_view.setPixmap(QPixmap.fromImage(Image))
         self.top_image_view.setPixmap(QPixmap.fromImage(Image))
@@ -382,7 +416,8 @@ class FotoBudka(QDialog):
         self.top_image_view.setVisible(True)
         self.mid_image_view.setVisible(True)
         self.bot_image_view.setVisible(True)
-        self.image_reader.stop_showing()
+        self.image_reader.reset()
+        self.countdown_shower.reset()
 
         img = cv2.cvtColor(self.fotobudka, cv2.COLOR_BGR2RGB)
         ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
@@ -398,40 +433,70 @@ class FotoBudka(QDialog):
         self.set_bot_text("Wciśnij przycisk, aby rozpocząć!")
         self.set_top_text("")
 
+        self.current_texts_bot_id.clear()
+        self.current_texts_top_id.clear()
+
+        while len(self.current_texts_bot_id) < 3:
+            id = random.randint(0, len(self.bop_texts) - 1)
+
+            if not (id in self.current_texts_bot_id):
+                self.current_texts_bot_id.append(id)
+
+        while len(self.current_texts_top_id) < 2:
+            id = random.randint(0, len(self.top_texts) - 1)
+
+            if not (id in self.current_texts_top_id):
+                self.current_texts_top_id.append(id)
+
     def sleep(self, sleep_time):
         loop = QEventLoop()
         QTimer.singleShot(sleep_time, loop.quit)
         loop.exec_()
 
+    def print(self):
+        if self.image_reader.output_image_path != "":
+            print("PRINTING!")
+            self.set_bot_text("Drukuję...")
+            # conn = cups.Connection()
+            # printers = conn.getPrinters()
+            # default_printer = printers.keys()[0]
+            # cups.setUser('kidier')
+            # conn.printFile(default_printer, self.image_reader.output_image_path, "boothy", {'fit-to-page': 'True'})
+            # print("Print job successfully created.")
+
+            self.sleep(5000)
+        else:
+            print("Missing output image!")
+
+    def button_click(self):
+        if self.current_state == 0:
+            self.image_reader.start_showing()
+
+            img = cv2.cvtColor(self.black, cv2.COLOR_BGR2RGB)
+            ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+            black_image = ConvertToQtFormat.scaled(self.img_width, self.img_height, Qt.KeepAspectRatio)
+            self.top_image_view.setPixmap(QPixmap.fromImage(black_image))
+
+            self.set_top_text("Przygotuj się do zdjęcia!")
+
+            self.set_bot_text(self.bop_texts[self.current_texts_bot_id[0]] + "<br>Zdjęcie nr 1")
+
+            self.sleep(self.wait_before_countdown)
+
+            self.set_top_text("")
+            self.set_bot_text("")
+
+            self.countdown_shower.start_counting()
+
+            self.current_state += 1
+        elif self.current_state == 4:
+            self.timer.stop()
+            self.print()
+            self.reset()
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
-            if self.current_state == 0:
-                self.image_reader.start_showing()
-
-                img = cv2.cvtColor(self.black, cv2.COLOR_BGR2RGB)
-                ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                black_image = ConvertToQtFormat.scaled(self.img_width, self.img_height, Qt.KeepAspectRatio)
-                self.top_image_view.setPixmap(QPixmap.fromImage(black_image))
-
-                self.set_top_text("Przygotuj się do zdjęcia!")
-
-                id = random.randint(0, len(self.bop_texts) - 1)
-
-                self.set_bot_text(self.bop_texts[id] + "<br>Zdjęcie nr 1")
-
-                self.sleep(2000)
-
-                self.set_top_text("")
-                self.set_bot_text("")
-
-                self.countdown_shower.start_counting()
-
-                self.current_state += 1
-
-        elif event.key() == Qt.Key_E:
-            self.bot_image_view.setVisible(False)
-        elif event.key() == Qt.Key_R:
-            self.bot_image_view.setVisible(True)
+            self.button_click()
         elif event.key() == Qt.Key_Escape:
             self.close()
 
