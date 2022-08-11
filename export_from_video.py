@@ -17,23 +17,25 @@ while(cap.isOpened()):
 
     id += 1
 
-    if id > 450:
-        print(id)
-    # Display the resulting frame
-
-        if id % 3 ==0:
-
-            cv2.imshow('Frame', frame)
-
-            cv2.imwrite("countdown/" + str(ind) + ".jpg", frame)
-            ind += 1
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-              break
+    cv2.imshow('Frame', frame)
+    cv2.waitKey(1)
+    # if id > 450:
+    #     print(id)
+    # # Display the resulting frame
+    #
+    #     if id % 3 ==0:
+    #
+    #         cv2.imshow('Frame', frame)
+    #
+    #         cv2.imwrite("countdown/" + str(ind) + ".jpg", frame)
+    #         ind += 1
+    #
+    #         if cv2.waitKey(1) & 0xFF == ord('q'):
+    #           break
 
   # Break the loop
   else:
-    break
+    print("OOO")
 
 
 print(id)
