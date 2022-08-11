@@ -300,12 +300,12 @@ class FotoBudka(QDialog):
         self.img_width = 720
         self.img_height = 405
 
-        self.wait_before_countdown = 5000
+        self.wait_before_countdown = 3
 
-        self.output_image_display_width = 460
-        self.output_image_display_height = 1310
+        self.output_image_display_width = 307
+        self.output_image_display_height = 874
 
-        self.fotobudka = cv2.imread("fotobudka.png")
+        self.fotobudka = cv2.imread("fotobudka_hd.png")
         self.black = cv2.imread("black.png")
 
         self.current_state = 0
@@ -371,17 +371,19 @@ class FotoBudka(QDialog):
             self.bot_image_view.setPixmap(QPixmap.fromImage(black_image))
 
             img = self.image_reader.get_output_image()
-
-            img = cv2.resize(img, (self.output_image_display_width, self.output_image_display_height))
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-            output_image = ConvertToQtFormat.scaled(self.output_image_display_width, self.output_image_display_height,
-                                                    Qt.KeepAspectRatio)
-            self.output_image_view.setPixmap(QPixmap.fromImage(output_image))
-
             self.image_reader.save_all_frames()
 
-            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować<br>Poczekaj 10 sekund,<br> aby anulować", 55)
+            #img = cv2.resize(img, (self.output_image_display_width, self.output_image_display_height))
+            # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            # ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+            # output_image = ConvertToQtFormat.scaled(self.output_image_display_width, self.output_image_display_height,
+            #                                         Qt.KeepAspectRatio)
+            # self.output_image_view.setPixmap(QPixmap.fromImage(output_image))
+            if self.image_reader.output_image_path != "":
+                pixmap = QPixmap(self.image_reader.output_image_path)
+                self.output_image_view.setPixmap(pixmap)
+
+            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować!<br>Poczekaj 10 sekund,<br> aby anulować!", 55)
 
             print("Start Timer")
 
