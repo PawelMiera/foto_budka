@@ -465,12 +465,12 @@ class FotoBudka(QDialog):
         if self.image_reader.output_image_path != "":
             print("PRINTING!")
             self.set_bot_text("Drukuję...")
-            # conn = cups.Connection()
-            # printers = conn.getPrinters()
-            # default_printer = printers.keys()[0]
-            # cups.setUser('kidier')
-            # conn.printFile(default_printer, self.image_reader.output_image_path, "boothy", {'fit-to-page': 'True'})
-            # print("Print job successfully created.")
+            conn = cups.Connection()
+            printers = conn.getPrinters()
+            default_printer = printers.keys()[0]
+            cups.setUser('kidier')
+            conn.printFile(default_printer, self.image_reader.output_image_path, "boothy", {'fit-to-page': 'True'})
+            print("Print job successfully created.")
 
             self.sleep(5000)
         else:
