@@ -52,16 +52,11 @@ vs = PiVideoStream().start()
 
 fps = FPS().start()
 # loop over some frames...this time using the threaded stream
-while fps._numFrames < args["num_frames"]:
+while fps._numFrames < 200:
 	# grab the frame from the threaded video stream and resize it
 	# to have a maximum width of 400 pixels
 	if vs.new_frame:
 		frame = vs.read()
-
-		# check to see if the frame should be displayed to our screen
-		if args["display"] > 0:
-			cv2.imshow("Frame", frame)
-			key = cv2.waitKey(1) & 0xFF
 		# update the FPS counter
 		fps.update()
 		vs.new_frame = False

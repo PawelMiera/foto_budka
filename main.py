@@ -13,7 +13,7 @@ import cups
 
 if platform.architecture()[0] != '64bit':
     import picamera
-    import RPi.GPIO as gpio
+    import RPi.GPIO as GPIO
     from picamera.array import PiRGBArray
 
 
@@ -333,6 +333,13 @@ class FotoBudka(QDialog):
 
         self.reset()
 
+        CAMERA_BUTTON_PIN = 22
+        if platform.architecture()[0] != '64bit':
+            GPIO.setwarnings(False)
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(CAMERA_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+            GPIO.add_event_detect(10, GPIO.FALLING, callback=self.button_click)
+
     def countdown_end(self):
         print("COUNTDOWN END")
         if self.current_state == 1 or self.current_state == 2:
@@ -471,6 +478,7 @@ class FotoBudka(QDialog):
 
     def button_click(self):
         if self.current_state == 0:
+            self.current_state += 1
             self.image_reader.start_showing()
 
             img = cv2.cvtColor(self.black, cv2.COLOR_BGR2RGB)
@@ -489,8 +497,8 @@ class FotoBudka(QDialog):
 
             self.countdown_shower.start_counting()
 
-            self.current_state += 1
         elif self.current_state == 4:
+            self.current_state += 1
             self.timer.stop()
             self.print()
             self.reset()
