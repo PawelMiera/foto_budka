@@ -2,7 +2,7 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 from threading import Thread
 import cv2
-from fps import FPS
+import time
 
 
 class PiVideoStream:
@@ -50,17 +50,20 @@ class PiVideoStream:
 
 vs = PiVideoStream().start()
 
-fps = FPS().start()
-# loop over some frames...this time using the threaded stream
-while fps._numFrames < 200:
+
+start = time.time()
+id =0
+# loop over some frames
+# if...this time using the threaded stream
+while id < 200:
 	# grab the frame from the threaded video stream and resize it
 	# to have a maximum width of 400 pixels
 	if vs.new_frame:
 		frame = vs.read()
 		# update the FPS counter
-		fps.update()
+		id +=1
 		vs.new_frame = False
 # stop the timer and display FPS information
-fps.stop()
-print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
-print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+elapsed = time.time() - start
+print("[INFO] elasped time: {:.2f}".format(elapsed))
+print("[INFO] approx. FPS: {:.2f}".format(200 / elapsed))
