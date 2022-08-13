@@ -336,7 +336,7 @@ class FotoBudka(QDialog):
         CAMERA_BUTTON_PIN = 21
         if platform.architecture()[0] != '64bit':
             GPIO.setwarnings(False)
-            GPIO.setmode(GPIO.BCM)
+            GPIO.setmode(GPIO.BOARD)
             GPIO.setup(CAMERA_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
             GPIO.add_event_detect(CAMERA_BUTTON_PIN, GPIO.FALLING, callback=self.button_click)
 
