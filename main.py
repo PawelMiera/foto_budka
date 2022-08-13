@@ -136,9 +136,14 @@ class ImageReader(QThread):
         self.frame_2 = None
         self.frame_3 = None
         self.background = cv2.imread("background.png")
+        self.print_background = cv2.imread("print_background.png")
+
 
         self.output_image = None
         self.output_image_path = ""
+
+        self.print_image = None
+        self.print_image_path = ""
 
         self.img_id = 0
 
@@ -162,6 +167,9 @@ class ImageReader(QThread):
         self.output_image = None
         self.img_id = 0
         self.output_image_path = ""
+
+        self.print_image_path = ""
+        self.print_image = None
 
     def start_showing(self):
         self.show = True
@@ -203,19 +211,38 @@ class ImageReader(QThread):
         else:
             self.output_image_path = None
 
+        if self.print_image is not None:
+            self.print_image_path = os.path.join(current_dir, "print.png")
+            cv2.imwrite(self.print_image_path, self.print_image)
+        else:
+            self.print_image_path = None
+
         self.last_dir_id += 1
 
-    def get_output_image(self):
+
+    def generate_output_image(self):
         self.output_image = self.background.copy()
 
-        f1 = cv2.resize(self.frame_1, (520, 293))
-        f2 = cv2.resize(self.frame_2, (520, 293))
-        f3 = cv2.resize(self.frame_3, (520, 293))
+        w = 520
+        h = 293
 
-        self.output_image[251:251 + 293, 47:47 + 520] = f1
-        self.output_image[629:629 + 293, 47:47 + 520] = f2
-        self.output_image[1013:1013 + 293, 47:47 + 520] = f3
+        x = 47
+        y1 = 251
+        y2 = 629
+        y3 = 1013
 
+        f1 = cv2.resize(self.frame_1, (w, h))
+        f2 = cv2.resize(self.frame_2, (w, h))
+        f3 = cv2.resize(self.frame_3, (w, h))
+
+        self.output_image[y1:y1 + h, x:x + w] = f1
+        self.output_image[y2:y2 + h, x:x + w] = f2
+        self.output_image[y3:y3 + h, x:x + w] = f3
+
+        self.print_image = self.print_background.copy()
+        self.print_image[0:1748, 0:614] = self.output_image
+
+    def get_output_image(self):
         return self.output_image.copy()
 
     def run(self):
@@ -377,7 +404,7 @@ class FotoBudka(QDialog):
             black_image = ConvertToQtFormat.scaled(self.img_width, self.img_height, Qt.KeepAspectRatio)
             self.bot_image_view.setPixmap(QPixmap.fromImage(black_image))
 
-            img = self.image_reader.get_output_image()
+            img = self.image_reader.generate_output_image()
             self.image_reader.save_all_frames()
 
             #img = cv2.resize(img, (self.output_image_display_width, self.output_image_display_height))
@@ -462,14 +489,14 @@ class FotoBudka(QDialog):
         loop.exec_()
 
     def print(self):
-        if self.image_reader.output_image_path != "":
+        if self.image_reader.print_image_path != "":
             print("PRINTING!")
             self.set_bot_text("Drukuję...")
             conn = cups.Connection()
             printers = conn.getPrinters()
             default_printer = printers.keys()[0]
             cups.setUser('kidier')
-            conn.printFile(default_printer, self.image_reader.output_image_path, "boothy", {'fit-to-page': 'True'})
+            conn.printFile(default_printer, self.image_reader.print_image_path, "boothy", {'fit-to-page': 'True'})
             print("Print job successfully created.")
 
             self.sleep(5000)
