@@ -333,7 +333,7 @@ class FotoBudka(QDialog):
 
         self.reset()
 
-        CAMERA_BUTTON_PIN = 22
+        CAMERA_BUTTON_PIN = 21
         if platform.architecture()[0] != '64bit':
             GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
