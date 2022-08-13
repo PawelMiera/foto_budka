@@ -336,7 +336,7 @@ class FotoBudka(QDialog):
         CAMERA_BUTTON_PIN = 21
         if platform.architecture()[0] != '64bit':
             GPIO.setwarnings(False)
-            GPIO.setmode(GPIO.BOARD)
+            GPIO.setmode(GPIO.BCM)
             GPIO.setup(CAMERA_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
             GPIO.add_event_detect(CAMERA_BUTTON_PIN, GPIO.FALLING, callback=self.button_click)
 
@@ -476,7 +476,7 @@ class FotoBudka(QDialog):
         else:
             print("Missing output image!")
 
-    def button_click(self):
+    def button_click(self, channel):
         if self.current_state == 0:
             self.current_state += 1
             self.image_reader.start_showing()
@@ -505,7 +505,7 @@ class FotoBudka(QDialog):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
-            self.button_click()
+            self.button_click(4)
         elif event.key() == Qt.Key_Escape:
             self.close()
 
