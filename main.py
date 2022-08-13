@@ -332,6 +332,8 @@ class FotoBudka(QDialog):
         self.output_image_display_width = 307
         self.output_image_display_height = 874
 
+        self.enable_camera_preview = True
+
         self.fotobudka = cv2.imread("fotobudka_hd.png")
         self.black = cv2.imread("black.png")
 
@@ -434,7 +436,8 @@ class FotoBudka(QDialog):
         self.top_image_view.setPixmap(QPixmap.fromImage(Image))
 
     def ImageViewUpdate(self, Image):
-        self.mid_image_view.setPixmap(QPixmap.fromImage(Image))
+        if self.enable_camera_preview:
+            self.mid_image_view.setPixmap(QPixmap.fromImage(Image))
 
     def set_top_text(self, text):
         self.top_text.setText(
