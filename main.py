@@ -338,7 +338,7 @@ class FotoBudka(QDialog):
             GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(CAMERA_BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-            GPIO.add_event_detect(10, GPIO.FALLING, callback=self.button_click)
+            GPIO.add_event_detect(CAMERA_BUTTON_PIN, GPIO.FALLING, callback=self.button_click)
 
     def countdown_end(self):
         print("COUNTDOWN END")
