@@ -300,7 +300,7 @@ class FotoBudka(QDialog):
         self.img_width = 720
         self.img_height = 405
 
-        self.wait_before_countdown = 3
+        self.wait_before_countdown = 4000
 
         self.output_image_display_width = 307
         self.output_image_display_height = 874
