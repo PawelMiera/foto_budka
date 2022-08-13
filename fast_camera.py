@@ -18,6 +18,7 @@ class PiVideoStream:
 		# if the thread should be stopped
 		self.frame = None
 		self.stopped = False
+		self.new_frame = False
 
 	def start(self):
 		# start the thread to read frames from the video stream
@@ -29,7 +30,9 @@ class PiVideoStream:
 			# grab the frame from the stream and clear the stream in
 			# preparation for the next frame
 			self.frame = f.array
+			self.new_frame = True
 			self.rawCapture.truncate(0)
+
 			# if the thread indicator variable is set, stop the thread
 			# and resource camera resources
 			if self.stopped:
@@ -52,14 +55,16 @@ fps = FPS().start()
 while fps._numFrames < args["num_frames"]:
 	# grab the frame from the threaded video stream and resize it
 	# to have a maximum width of 400 pixels
-	frame = vs.read()
+	if vs.new_frame:
+		frame = vs.read()
 
-	# check to see if the frame should be displayed to our screen
-	if args["display"] > 0:
-		cv2.imshow("Frame", frame)
-		key = cv2.waitKey(1) & 0xFF
-	# update the FPS counter
-	fps.update()
+		# check to see if the frame should be displayed to our screen
+		if args["display"] > 0:
+			cv2.imshow("Frame", frame)
+			key = cv2.waitKey(1) & 0xFF
+		# update the FPS counter
+		fps.update()
+		vs.new_frame = False
 # stop the timer and display FPS information
 fps.stop()
 print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
