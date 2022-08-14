@@ -135,7 +135,7 @@ class ImageReader(QThread):
         self.frame_1 = None
         self.frame_2 = None
         self.frame_3 = None
-        self.background = cv2.imread("background.png")
+        self.background = cv2.imread("Pasek1.png")
         self.print_background = cv2.imread("print_background.png")
 
 
@@ -223,13 +223,13 @@ class ImageReader(QThread):
     def generate_output_image(self):
         self.output_image = self.background.copy()
 
-        w = 520
-        h = 293
+        w = 572
+        h = 343
 
-        x = 47
-        y1 = 251
-        y2 = 629
-        y3 = 1013
+        x = 22
+        y1 = 103
+        y2 = 533
+        y3 = 961
 
         f1 = cv2.resize(self.frame_1, (w, h))
         f2 = cv2.resize(self.frame_2, (w, h))
