@@ -348,7 +348,7 @@ class FotoBudka(QDialog):
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
 
-        self.top_texts = ["Rewelacyjnie!", "Czadowo!", "Gitówa!", "Zmiana stroju!", "Pięknie!", 'Bomba!']
+        self.top_texts = ["Rewelacyjnie!", "Czadowo!", "Gitówa!", "Zmiana stroju!", "Pięknie!", 'Bomba!', 'Sztos!']
         self.bop_texts = ["Nadchodzi", "Teraz", "Przybywa", "Już za chwilę", "Trzy, dwa, jeden", "Wkracza", "Wskakuje",
                           "Wlatuje"]
 
