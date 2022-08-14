@@ -135,7 +135,7 @@ class ImageReader(QThread):
         self.frame_1 = None
         self.frame_2 = None
         self.frame_3 = None
-        self.background = cv2.imread("background2.png")
+        self.background = cv2.imread("background.png")
         self.print_background = cv2.imread("print_background.png")
 
 
