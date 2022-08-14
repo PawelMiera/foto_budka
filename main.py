@@ -240,7 +240,7 @@ class ImageReader(QThread):
         self.output_image[y3:y3 + h, x:x + w] = f3
 
         self.print_image = self.print_background.copy()
-        self.print_image[0:1748, 0:614] = self.output_image
+        self.print_image[0:1748, 0:620] = self.output_image
 
     def get_output_image(self):
         return self.output_image.copy()
