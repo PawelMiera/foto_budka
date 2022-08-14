@@ -135,7 +135,7 @@ class ImageReader(QThread):
         self.frame_1 = None
         self.frame_2 = None
         self.frame_3 = None
-        self.background = cv2.imread("background.png")
+        self.background = cv2.imread("background2.png")
         self.print_background = cv2.imread("print_background.png")
 
 
@@ -348,7 +348,7 @@ class FotoBudka(QDialog):
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
 
-        self.top_texts = ["Rewelacyjnie!", "Czadowo!", "OMG!", "Gitówa!", "Zmiana stroju!"]
+        self.top_texts = ["Rewelacyjnie!", "Czadowo!", "Gitówa!", "Zmiana stroju!", "Pięknie!", 'Bomba!']
         self.bop_texts = ["Nadchodzi", "Teraz", "Przybywa", "Już za chwilę", "Trzy, dwa, jeden", "Wkracza", "Wskakuje",
                           "Wlatuje"]
 
