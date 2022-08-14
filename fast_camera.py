@@ -7,4 +7,4 @@ print(printers)
 default_printer = list(printers.keys())[0]
 print(default_printer)
 cups.setUser('kidier')
-conn.printFile(default_printer, "saved_images/1/print.png", "boothy", {'fit-to-page': 'True'})
+conn.printFile(default_printer, "saved_images/7/print.png", "boothy", {'fit-to-page': 'True', 'page-left': '0'})
