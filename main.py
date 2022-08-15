@@ -33,10 +33,6 @@ class CountdownShower(QThread):
 
         self.cap = cv2.VideoCapture('count_5_cropped.mp4')
 
-        # for i in range(images_count):
-        #     frame = cv2.imread("countdown/" + str(i) + ".jpg")
-        #     self.images.append(frame)
-
     def reset(self):
         self.load_cap()
         self.start_countdown = False
@@ -118,7 +114,7 @@ class CountdownShower(QThread):
 class ImageReader(QThread):
     ImageUpdate = pyqtSignal(QImage)
 
-    def __init__(self, camera_width, camera_height, width, height, camera_flip, camera_rotation, save_dir):
+    def __init__(self, camera_width, camera_height, width, height, camera_flip, camera_rotation, save_dir, pasek_filename="Pasek.png"):
         super().__init__()
         self.camera_height = camera_height
         self.camera_width = camera_width
@@ -135,7 +131,7 @@ class ImageReader(QThread):
         self.frame_1 = None
         self.frame_2 = None
         self.frame_3 = None
-        self.background = cv2.imread("Pasek1.png")
+        self.background = cv2.imread(pasek_filename)
         self.print_background = cv2.imread("print_background.png")
 
 
@@ -257,6 +253,7 @@ class ImageReader(QThread):
             camera.annotate_text_size = 80
             camera.resolution = (self.camera_width, self.camera_height)
             camera.hflip = self.camera_flip
+            camera.framerate = 32
             cap = PiRGBArray(camera)
 
             while self.ThreadActive:
@@ -327,21 +324,45 @@ class FotoBudka(QDialog):
         self.img_width = 720
         self.img_height = 405
 
-        self.wait_before_countdown = 4000
-
         self.output_image_display_width = 307
         self.output_image_display_height = 874
 
-        self.enable_camera_preview = True
+        """
+        Tutaj ustawiasz wszystkie parametry
 
+        self.enable_camera_preview - czy włączyć podgląd kamery
+        self.fotobudka - nazwa pliki w ekranie startowym 720x405 px
+        self.black - tło pod wyswietlanym tekstem, raczej nie zmieniaj
+        
+        CAMERA_BUTTON_PIN - pin na raspi do przycisku
+        self.wait_before_countdown - czas przed włączeniem timera przed zdjeciem ms
+        self.timeout_before_return - czas oczekiwania na powrót do głownego ekranu po całej sekwencji ms
+        self.wait_for_print - czas oczekiwania na wydruk przed powrotem do głownego menu ms
+        
+        
+        self.image_reader - parametry kolejno
+        rozdzielczość kamery w, h
+        wymiar obrazu wyswietlanego z kamery
+        obrot kamery
+        rotacja kamery
+        nazwa folderu do zapisu zdjec
+        nazwa pliku z paskiem
+        """
+
+        self.enable_camera_preview = True
         self.fotobudka = cv2.imread("fotobudka_hd.png")
         self.black = cv2.imread("black.png")
+        CAMERA_BUTTON_PIN = 21
+        self.wait_before_countdown = 4000
+        self.timeout_before_return = 10000
+        self.wait_for_print = 9000
 
-        self.current_state = 0
+        self.image_reader = ImageReader(1280, 720, self.img_width, self.img_height, 0, 0, "saved_images", "Pasek.png")
 
-        self.image_reader = ImageReader(1280, 720, self.img_width, self.img_height, 0, 0, "saved_images")
         self.image_reader.ImageUpdate.connect(self.ImageViewUpdate)
         self.image_reader.start()
+
+        self.current_state = 0
 
         self.countdown_shower = CountdownShower(self.img_width, self.img_height, 80)
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
@@ -357,12 +378,12 @@ class FotoBudka(QDialog):
 
         self.timer = QTimer()
         self.timer.setSingleShot(True)
-        self.timer.setInterval(10000)
+        self.timer.setInterval(self.timeout_before_return)
         self.timer.timeout.connect(self.timeout)
 
         self.reset()
 
-        CAMERA_BUTTON_PIN = 21
+
         if platform.architecture()[0] != '64bit':
             GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
@@ -502,7 +523,7 @@ class FotoBudka(QDialog):
             conn.printFile(default_printer, self.image_reader.print_image_path, "boothy", {'fit-to-page': 'True'})
             print("Print job successfully created.")
 
-            self.sleep(8000)
+            self.sleep(self.wait_for_print)
         else:
             print("Missing output image!")
 
