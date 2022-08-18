@@ -62,8 +62,8 @@
   <widget class="QLabel" name="output_image_view">
    <property name="geometry">
     <rect>
-     <x>205</x>
-     <y>0</y>
+     <x>370</x>
+     <y>100</y>
      <width>310</width>
      <height>874</height>
     </rect>
@@ -116,7 +116,7 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>1200</y>
+     <y>1100</y>
      <width>1050</width>
      <height>405</height>
     </rect>
@@ -125,7 +125,7 @@
     <string notr="true">background-color: rgba(255, 255, 255, 0)</string>
    </property>
    <property name="text">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;&lt;span style=&quot; font-size:65pt; font-weight:600; color:#ffffff;&quot;&gt;Wciśnij przycisk,&lt;br&gt; aby wydrukować!&lt;br&gt;Poczekaj 10 sekund,&lt;br&gt; aby anulować!&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="wordWrap">
     <bool>true</bool>
