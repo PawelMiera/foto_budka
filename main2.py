@@ -288,7 +288,7 @@ class FotoBudka(QDialog):
         self.black = QPixmap("black_1050_1680.png")
 
         CAMERA_BUTTON_PIN = 21
-        self.wait_before_countdown = 2
+        self.wait_before_countdown = 4000
         self.timeout_before_return = 10000
         self.wait_for_print = 9000
 
