@@ -27,7 +27,7 @@ class CountdownShower(QThread):
         self.height = height
         self.width = width
         self.last_dir_id = 0
-        self.break_count = images_count -3
+        self.break_count = images_count - 4
         self.t = 5 / images_count
 
         self.start_countdown = False
@@ -60,13 +60,11 @@ class CountdownShower(QThread):
                     if not self.start_countdown:
                         break
                     loop_id += 1
-                    if loop_id > self.break_count:
-                        break
+
                     ret, frame = self.cap.read()
                     if ret == True:
                         s = time.time()
                         img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
                         ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
                         img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
                         self.ImageUpdate.emit(img_qt)
@@ -295,8 +293,7 @@ class FotoBudka(QDialog):
 
         self.ekran_startowy = QPixmap("ekran_startowy.png")
         self.black = QPixmap("black_1050_1680.png")
-        self.smile = cv2.imread("smile.png")
-        self.smile = cv2.cvtColor(self.smile, cv2.COLOR_BGR2RGB)
+        self.smile = QPixmap("AAAA.png")
 
         CAMERA_BUTTON_PIN = 21
         self.wait_before_countdown = 4000
@@ -309,7 +306,7 @@ class FotoBudka(QDialog):
 
         self.current_state = 0
 
-        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 117)
+        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 80)
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
@@ -337,11 +334,12 @@ class FotoBudka(QDialog):
     def countdown_end(self):
         print("COUNTDOWN END")
         if self.current_state == 1 or self.current_state == 2:
-            ConvertToQtFormat = QImage(self.smile.data, self.smile.shape[1], self.smile.shape[0], QImage.Format_RGB888)
-            img_qt = ConvertToQtFormat.scaled(self.img_width, self.img_height, Qt.KeepAspectRatio)
-            self.image_view.setPixmap(QPixmap.fromImage(img_qt))
+
+            self.image_view.setPixmap(self.smile)
 
             self.image_reader.capture()
+
+            self.image_view.setPixmap(self.black)
 
             self.set_top_text(self.top_texts[self.current_texts_top_id[self.current_state - 1]])
 
@@ -361,6 +359,8 @@ class FotoBudka(QDialog):
         elif self.current_state == 3:
             self.image_view.setPixmap(self.smile)
             self.image_reader.capture()
+
+            self.image_view.setPixmap(self.black)
 
             self.output_image_view.setVisible(True)
 
