@@ -36,6 +36,7 @@ class CountdownShower(QThread):
     def reset(self):
         self.load_cap()
         self.start_countdown = False
+
     def load_cap(self):
         if self.cap is not None:
             self.cap.release()
@@ -105,35 +106,38 @@ class CountdownShower(QThread):
                 #
                 # self.start_countdown = False
 
-
     def stop(self):
         self.ThreadActive = False
         self.quit()
 
 
-class ImageReader(QThread):
-    ImageUpdate = pyqtSignal(QImage)
+class ImageReader:
+    def __init__(self, camera_width, camera_height, camera_flip, camera_rotation, shutter, frame_rate,
+                 save_dir, pasek_filename="Pasek_new.png"):
 
-    def __init__(self, camera_width, camera_height, width, height, camera_flip, camera_rotation, save_dir, pasek_filename="Pasek.png"):
-        super().__init__()
         self.camera_height = camera_height
         self.camera_width = camera_width
         self.camera_rotation = camera_rotation
         self.camera_flip = camera_flip
-        self.height = height
-        self.width = width
+
+        if platform.architecture()[0] != '64bit':
+            self.camera = picamera.PiCamera()
+            self.camera.rotation = self.camera_rotation
+            self.camera.resolution = (self.camera_width, self.camera_height)
+            self.camera.hflip = self.camera_flip
+            self.camera.framerate = frame_rate
+            self.camera.shutter_speed = shutter
+
+            self.camera.capture('frame.png')
 
         self.current_frame = None
         self.save_dir = save_dir
-
-        self.show = False
 
         self.frame_1 = None
         self.frame_2 = None
         self.frame_3 = None
         self.background = cv2.imread(pasek_filename)
         self.print_background = cv2.imread("print_background.png")
-
 
         self.output_image = None
         self.output_image_path = ""
@@ -156,7 +160,6 @@ class ImageReader(QThread):
         self.save_all_frames()
 
     def reset(self):
-        self.show = False
         self.frame_1 = None
         self.frame_2 = None
         self.frame_3 = None
@@ -167,23 +170,22 @@ class ImageReader(QThread):
         self.print_image_path = ""
         self.print_image = None
 
-    def start_showing(self):
-        self.show = True
-
-    def stop_showing(self):
-        self.show = False
-
     def capture(self):
-        print("CAPTURE!")
-        if self.current_frame is not None:
+        if platform.architecture()[0] != '64bit':
+            self.camera.capture('frame.png')
+            frame = cv2.imread("frame.png")
+        else:
+            print("READ")
+            frame = cv2.imread("0.jpg")
+        if frame is not None:
             if self.img_id == 0:
-                self.frame_1 = self.current_frame.copy()
+                self.frame_1 = frame.copy()
                 self.img_id += 1
             elif self.img_id == 1:
-                self.frame_2 = self.current_frame.copy()
+                self.frame_2 = frame.copy()
                 self.img_id += 1
             elif self.img_id == 2:
-                self.frame_3 = self.current_frame.copy()
+                self.frame_3 = frame.copy()
                 self.img_id += 1
         else:
             print("Missing camera image!")
@@ -215,101 +217,32 @@ class ImageReader(QThread):
 
         self.last_dir_id += 1
 
-
     def generate_output_image(self):
         self.output_image = self.background.copy()
 
         w = 572
         h = 343
 
-        x = 22
+        x1 = 24
+        x2 = 24
+        x3 = 24
         y1 = 103
-        y2 = 533
-        y3 = 961
+        y2 = 534
+        y3 = 963
 
         f1 = cv2.resize(self.frame_1, (w, h))
         f2 = cv2.resize(self.frame_2, (w, h))
         f3 = cv2.resize(self.frame_3, (w, h))
 
-        self.output_image[y1:y1 + h, x:x + w] = f1
-        self.output_image[y2:y2 + h, x:x + w] = f2
-        self.output_image[y3:y3 + h, x:x + w] = f3
+        self.output_image[y1:y1 + h, x1:x1 + w] = f1
+        self.output_image[y2:y2 + h, x2:x2 + w] = f2
+        self.output_image[y3:y3 + h, x3:x3 + w] = f3
 
         self.print_image = self.print_background.copy()
         self.print_image[0:1748, 0:620] = self.output_image
 
     def get_output_image(self):
         return self.output_image.copy()
-
-    def run(self):
-        self.ThreadActive = True
-
-        id = 0
-        last_time = time.time()
-
-        if platform.architecture()[0] != '64bit':
-            camera = picamera.PiCamera()
-            camera.rotation = self.camera_rotation
-            camera.annotate_text_size = 80
-            camera.resolution = (self.camera_width, self.camera_height)
-            camera.hflip = self.camera_flip
-            camera.framerate = 32
-            cap = PiRGBArray(camera)
-
-            while self.ThreadActive:
-                if self.show:
-                    for frame_picamera in camera.capture_continuous(cap, format="bgr", use_video_port=True):
-
-                        frame = frame_picamera.array
-
-                        self.current_frame = frame
-
-                        if time.time() - last_time > 1:
-                            print("FPS:", id)
-                            id = 0
-                            last_time = time.time()
-
-                        if frame is not None:
-                            id += 1
-                            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                            ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                            img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
-
-                            self.ImageUpdate.emit(img_qt)
-                        cap.truncate(0)
-
-                        if not self.show or not self.ThreadActive:
-                            break
-                else:
-                    loop = QEventLoop()
-                    QTimer.singleShot(100, loop.quit)
-                    loop.exec_()
-
-        else:
-            while self.ThreadActive:
-                if self.show:
-                    frame = cv2.imread("0.jpg")
-
-                    if time.time() - last_time > 1:
-                        print("FPS:", id)
-                        id = 0
-                        last_time = time.time()
-
-                    if frame is not None:
-                        self.current_frame = frame
-                        id += 1
-                        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                        img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
-                        self.ImageUpdate.emit(img_qt)
-                else:
-                    loop = QEventLoop()
-                    QTimer.singleShot(100, loop.quit)
-                    loop.exec_()
-
-    def stop(self):
-        self.ThreadActive = False
-        self.quit()
 
 
 class FotoBudka(QDialog):
@@ -351,19 +284,17 @@ class FotoBudka(QDialog):
 
         self.enable_camera_preview = True
 
-
         self.ekran_startowy = QPixmap("ekran_startowy.png")
         self.black = QPixmap("black_1050_1680.png")
 
         CAMERA_BUTTON_PIN = 21
-        self.wait_before_countdown = 4000
+        self.wait_before_countdown = 2
         self.timeout_before_return = 10000
         self.wait_for_print = 9000
 
-        self.image_reader = ImageReader(1280, 720, self.img_width, self.img_height, 0, 0, "saved_images", "Pasek.png")
-
-        self.image_reader.ImageUpdate.connect(self.ImageViewUpdate)
-        self.image_reader.start()
+        self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
+                                        shutter=33000, frame_rate=1, save_dir="saved_images",
+                                        pasek_filename="Pasek_new.png")
 
         self.current_state = 0
 
@@ -400,7 +331,8 @@ class FotoBudka(QDialog):
             self.set_top_text(self.top_texts[self.current_texts_top_id[self.current_state - 1]])
 
             self.set_bot_text(
-                self.bop_texts[self.current_texts_bot_id[self.current_state]] + "<br>Zdjęcie nr " + str(self.current_state + 1))
+                self.bop_texts[self.current_texts_bot_id[self.current_state]] + "<br>Zdjęcie nr " + str(
+                    self.current_state + 1))
 
             self.current_state += 1
 
@@ -413,7 +345,6 @@ class FotoBudka(QDialog):
 
         elif self.current_state == 3:
             self.image_reader.capture()
-            self.image_reader.stop_showing()
             self.output_image_view.setVisible(True)
 
             img = self.image_reader.generate_output_image()
@@ -441,7 +372,6 @@ class FotoBudka(QDialog):
     def ImageViewUpdate(self, Image):
         pass
 
-
     def set_top_text(self, text):
         self.top_text.setText(
             "<html><head/><body><p align=\"center\"><span style=\" font-size:100pt; font-weight:600; color:#ffffff;\"> " + text + "</span></p></body></html>")
@@ -457,7 +387,6 @@ class FotoBudka(QDialog):
         self.image_view.setVisible(True)
         self.image_reader.reset()
         self.countdown_shower.reset()
-
 
         self.image_view.setPixmap(self.ekran_startowy)
 
@@ -502,7 +431,6 @@ class FotoBudka(QDialog):
     def button_click(self, channel):
         if self.current_state == 0:
             self.current_state += 1
-            self.image_reader.start_showing()
 
             self.image_view.setPixmap(self.black)
 
