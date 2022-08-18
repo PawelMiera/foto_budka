@@ -84,7 +84,7 @@ class CountdownShower(QThread):
                 self.load_cap()
             else:
                 loop = QEventLoop()
-                QTimer.singleShot(100, loop.quit)
+                QTimer.singleShot(50, loop.quit)
                 loop.exec_()
                 # for i in range(len(self.images)):
                 #     if not self.start_countdown:
