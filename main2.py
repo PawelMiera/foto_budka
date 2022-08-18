@@ -27,7 +27,7 @@ class CountdownShower(QThread):
         self.height = height
         self.width = width
         self.last_dir_id = 0
-        self.break_count = images_count - 4
+        self.break_count = images_count - 2
         self.t = 5 / images_count
 
         self.start_countdown = False
@@ -55,14 +55,13 @@ class CountdownShower(QThread):
         while self.ThreadActive:
 
             if self.start_countdown:
-                loop_id = 0
                 while self.cap.isOpened():
                     if not self.start_countdown:
                         break
-                    loop_id += 1
 
                     ret, frame = self.cap.read()
-                    if ret == True:
+
+                    if ret:
                         s = time.time()
                         img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                         ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
@@ -86,27 +85,6 @@ class CountdownShower(QThread):
                 loop = QEventLoop()
                 QTimer.singleShot(50, loop.quit)
                 loop.exec_()
-                # for i in range(len(self.images)):
-                #     if not self.start_countdown:
-                #         break
-                #
-                #     s = time.time()
-                #     img = cv2.cvtColor(self.images[i], cv2.COLOR_BGR2RGB)
-                #
-                #     ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                #     img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
-                #     self.ImageUpdate.emit(img_qt)
-                #
-                #     elapsed = time.time() - s
-                #     delta = self.t - elapsed
-                #
-                #     if delta > 0:
-                #         loop = QEventLoop()
-                #         QTimer.singleShot(int(delta * 1000), loop.quit)
-                #         loop.exec_()
-                # self.EndSignal.emit()
-                #
-                # self.start_countdown = False
 
     def stop(self):
         self.ThreadActive = False
