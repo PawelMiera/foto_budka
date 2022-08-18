@@ -31,7 +31,7 @@ class CountdownShower(QThread):
 
         self.start_countdown = False
 
-        self.cap = cv2.VideoCapture('countdown_675_1080.mp4')
+        self.cap = cv2.VideoCapture('countdown_675_1080_reduced.mp4')
 
     def reset(self):
         self.load_cap()
@@ -367,7 +367,7 @@ class FotoBudka(QDialog):
 
         self.current_state = 0
 
-        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 80)
+        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 120)
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
@@ -423,7 +423,7 @@ class FotoBudka(QDialog):
                 pixmap = QPixmap(self.image_reader.output_image_path)
                 self.output_image_view.setPixmap(pixmap)
 
-            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować!<br>Poczekaj 10 sekund,<br> aby anulować!", 55)
+            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować!<br>Poczekaj 10 sekund,<br> aby anulować!", 65)
 
             print("Start Timer")
 
@@ -444,9 +444,9 @@ class FotoBudka(QDialog):
 
     def set_top_text(self, text):
         self.top_text.setText(
-            "<html><head/><body><p align=\"center\"><span style=\" font-size:70pt; font-weight:600; color:#ffffff;\"> " + text + "</span></p></body></html>")
+            "<html><head/><body><p align=\"center\"><span style=\" font-size:100pt; font-weight:600; color:#ffffff;\"> " + text + "</span></p></body></html>")
 
-    def set_bot_text(self, text, size=70):
+    def set_bot_text(self, text, size=100):
         self.bot_text.setText(
             "<html><head/><body><p align=\"center\"><span style=\" font-size:" + str(
                 size) + "pt; font-weight:600; color:#ffffff;\"> " + text + "</span></p></body></html>")
