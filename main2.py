@@ -293,7 +293,7 @@ class FotoBudka(QDialog):
 
         self.ekran_startowy = QPixmap("ekran_startowy.png")
         self.black = QPixmap("black_1050_1680.png")
-        self.smile = QPixmap("AAAA.png")
+        self.smile = QPixmap("smile.png")
 
         CAMERA_BUTTON_PIN = 21
         self.wait_before_countdown = 4000
