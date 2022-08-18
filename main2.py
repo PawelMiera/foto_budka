@@ -292,15 +292,15 @@ class FotoBudka(QDialog):
         CAMERA_BUTTON_PIN = 21
         self.wait_before_countdown = 4000
         self.timeout_before_return = 10000
-        self.wait_for_print = 9000
+        self.wait_for_print = 15000
 
         self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
-                                        shutter=33000, frame_rate=1, iso=400, save_dir="saved_images",
+                                        shutter=380000, frame_rate=1, iso=400, save_dir="saved_images",
                                         pasek_filename="Pasek_new.png")
 
         self.current_state = 0
 
-        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 120)
+        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 117)
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
@@ -347,9 +347,10 @@ class FotoBudka(QDialog):
 
         elif self.current_state == 3:
             self.image_reader.capture()
+
             self.output_image_view.setVisible(True)
 
-            img = self.image_reader.generate_output_image()
+            self.image_reader.generate_output_image()
             self.image_reader.save_all_frames()
 
             if self.image_reader.output_image_path != "":
