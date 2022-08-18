@@ -112,7 +112,7 @@ class CountdownShower(QThread):
 
 
 class ImageReader:
-    def __init__(self, camera_width, camera_height, camera_flip, camera_rotation, shutter, frame_rate,
+    def __init__(self, camera_width, camera_height, camera_flip, camera_rotation, shutter, frame_rate, iso,
                  save_dir, pasek_filename="Pasek_new.png"):
 
         self.camera_height = camera_height
@@ -124,9 +124,11 @@ class ImageReader:
             self.camera = picamera.PiCamera()
             self.camera.rotation = self.camera_rotation
             self.camera.resolution = (self.camera_width, self.camera_height)
+            self.camera.exposure_mode = 'off'
             self.camera.hflip = self.camera_flip
             self.camera.framerate = frame_rate
             self.camera.shutter_speed = shutter
+            self.camera.iso = iso
 
             self.camera.capture('frame.png')
 
@@ -293,7 +295,7 @@ class FotoBudka(QDialog):
         self.wait_for_print = 9000
 
         self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
-                                        shutter=33000, frame_rate=1, save_dir="saved_images",
+                                        shutter=33000, frame_rate=1, iso=400, save_dir="saved_images",
                                         pasek_filename="Pasek_new.png")
 
         self.current_state = 0
