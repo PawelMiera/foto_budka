@@ -356,7 +356,7 @@ class FotoBudka(QDialog):
                 pixmap = QPixmap(self.image_reader.output_image_path)
                 self.output_image_view.setPixmap(pixmap)
 
-            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować!<br>Poczekaj 10 sekund,<br> aby anulować!", 65)
+            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować!<br>Poczekaj 10 sekund,<br> aby anulować!", 60)
 
             print("Start Timer")
 
