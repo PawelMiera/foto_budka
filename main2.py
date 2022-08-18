@@ -297,7 +297,7 @@ class FotoBudka(QDialog):
 
         CAMERA_BUTTON_PIN = 21
         self.wait_before_countdown = 4000
-        self.timeout_before_return = 10000
+        self.timeout_before_return = 15000
         self.wait_for_print = 15000
 
         self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
@@ -360,18 +360,18 @@ class FotoBudka(QDialog):
             self.image_view.setPixmap(self.smile)
             self.image_reader.capture()
 
-            self.image_view.setPixmap(self.black)
-
             self.output_image_view.setVisible(True)
 
             self.image_reader.generate_output_image()
             self.image_reader.save_all_frames()
 
+            self.image_view.setPixmap(self.black)
+
             if self.image_reader.output_image_path != "":
                 pixmap = QPixmap(self.image_reader.output_image_path)
                 self.output_image_view.setPixmap(pixmap)
 
-            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować!<br>Poczekaj 10 sekund,<br> aby anulować!", 65)
+            self.set_bot_text("Wciśnij przycisk,<br> aby wydrukować!<br>Poczekaj 15 sekund,<br> aby anulować!", 65)
 
             print("Start Timer")
 
