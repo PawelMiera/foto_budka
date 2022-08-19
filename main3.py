@@ -334,8 +334,18 @@ class FotoBudka(QDialog):
 
             self.image_reader.start()
 
+            loop_i = 0
             while not self.foto_taken:
-                self.sleep(10)
+                loop_i += 1
+                if loop_i < 10:
+                    self.image_view.setPixmap(self.smile)
+                    self.sleep(10)
+                else:
+                    self.image_view.setPixmap(self.smile)
+                    self.sleep(100)
+                if loop_i > 400:
+                    print("ERROR CAPTURE IS TAKING TOO LONG!")
+                    break
 
             self.image_view.setPixmap(self.black)
 
@@ -360,9 +370,18 @@ class FotoBudka(QDialog):
             self.foto_taken = False
 
             self.image_reader.start()
-
+            loop_i = 0
             while not self.foto_taken:
-                self.sleep(10)
+                loop_i += 1
+                if loop_i < 10:
+                    self.image_view.setPixmap(self.smile)
+                    self.sleep(10)
+                else:
+                    self.image_view.setPixmap(self.smile)
+                    self.sleep(100)
+                if loop_i > 400:
+                    print("ERROR CAPTURE IS TAKING TOO LONG!")
+                    break
 
             self.output_image_view.setVisible(True)
 
