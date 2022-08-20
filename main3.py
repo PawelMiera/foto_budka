@@ -305,7 +305,7 @@ class FotoBudka(QDialog):
         self.image_reader.start()
         self.current_state = 0
 
-        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 555)  #107
+        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 107)  #107
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
