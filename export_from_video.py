@@ -1,7 +1,7 @@
 import cv2
 import time
 
-cap = cv2.VideoCapture('count_5_cropped3.mp4')
+cap = cv2.VideoCapture('odliczanie.mp4')
 
 id = 0
 ind = 0
@@ -14,7 +14,7 @@ while(cap.isOpened()):
   last_time = time.time()
   t = 1/15
   if ret == True:
-
+    print(frame.shape)
     id += 1
 
     cv2.imshow('Frame', frame)

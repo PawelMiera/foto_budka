@@ -32,7 +32,9 @@ class CountdownShower(QThread):
 
         self.start_countdown = False
 
-        self.cap = cv2.VideoCapture('countdown_675_1080_reduced.mp4')
+        self.filename = 'odliczanie.mp4'
+
+        self.cap = cv2.VideoCapture(self.filename)
 
     def reset(self):
         self.load_cap()
@@ -41,7 +43,7 @@ class CountdownShower(QThread):
     def load_cap(self):
         if self.cap is not None:
             self.cap.release()
-        self.cap = cv2.VideoCapture('count_5_cropped.mp4')
+        self.cap = cv2.VideoCapture(self.filename)
 
     def start_counting(self):
         self.start_countdown = True
@@ -63,10 +65,17 @@ class CountdownShower(QThread):
 
                     if ret:
                         s = time.time()
-                        img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
-                        img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
-                        self.ImageUpdate.emit(img_qt)
+                        # img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        # ConvertToQtFormat = QImage(img.data, img.shape[1], img.shape[0], QImage.Format_RGB888)
+                        # img_qt = ConvertToQtFormat.scaled(self.width, self.height, Qt.KeepAspectRatio)
+                        # self.ImageUpdate.emit(img_qt)
+                        rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                        h, w, ch = rgbImage.shape
+                        bytesPerLine = ch * w
+                        convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
+                        p = convertToQtFormat.scaled(1050, 1680, Qt.KeepAspectRatio)
+                        self.ImageUpdate.emit(p)
+
                         elapsed = time.time() - s
                         delta = self.t - elapsed
 
@@ -281,10 +290,11 @@ class FotoBudka(QDialog):
         CAMERA_BUTTON_PIN = 21
         self.wait_before_countdown = 4000
         self.timeout_before_return = 15000
-        self.wait_for_print = 15000
+        self.wait_for_print = 19000
         self.foto_taken = False
 
         self.how_many_prints = 1
+        self.max_prints = 4
 
         self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
                                         shutter=380000, frame_rate=1, iso=400, save_dir="saved_images",
@@ -499,7 +509,7 @@ class FotoBudka(QDialog):
             self.print()
             self.reset()
         elif self.current_state == 5:
-            if self.how_many_prints < 3:
+            if self.how_many_prints < self.max_prints:
                 print("Print more!")
                 self.how_many_prints += 1
                 self.set_bot_text("Wciśnij przycisk, aby wydrukować więcej kopii!<br>Drukuję " + str(self.how_many_prints) + "...", 65)
