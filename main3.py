@@ -284,6 +284,8 @@ class FotoBudka(QDialog):
         self.wait_for_print = 15000
         self.foto_taken = False
 
+        self.how_many_prints = 1
+
         self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
                                         shutter=380000, frame_rate=1, iso=400, save_dir="saved_images",
                                         pasek_filename="Pasek_new.png")
@@ -423,6 +425,7 @@ class FotoBudka(QDialog):
 
     def reset(self):
         self.current_state = 0
+        self.how_many_prints = 1
         self.output_image_view.setVisible(False)
         self.image_view.setVisible(True)
         self.image_reader.reset()
@@ -456,16 +459,20 @@ class FotoBudka(QDialog):
 
     def print(self):
         if self.image_reader.print_image_path != "":
-            print("PRINTING!")
-            self.set_bot_text("Drukuję...")
-            conn = cups.Connection()
-            printers = conn.getPrinters()
-            default_printer = list(printers.keys())[0]
-            cups.setUser('kidier')
-            conn.printFile(default_printer, self.image_reader.print_image_path, "boothy", {'fit-to-page': 'True'})
-            print("Print job successfully created.")
+            print_id = 0
+            while print_id < self.how_many_prints:
+                print("PRINTING!")
+                self.set_bot_text("Wciśnij przycisk, aby wydrukować więcej kopii!<br>Drukuję " + str(self.how_many_prints) + "...", 65)
+                if platform.architecture()[0] != '64bit':
+                    conn = cups.Connection()
+                    printers = conn.getPrinters()
+                    default_printer = list(printers.keys())[0]
+                    cups.setUser('kidier')
+                    conn.printFile(default_printer, self.image_reader.print_image_path, "boothy", {'fit-to-page': 'True'})
+                    print("Print job successfully created.")
 
-            self.sleep(self.wait_for_print)
+                self.sleep(self.wait_for_print)
+                print_id += 1
         else:
             print("Missing output image!")
 
@@ -491,6 +498,11 @@ class FotoBudka(QDialog):
             self.timer.stop()
             self.print()
             self.reset()
+        elif self.current_state == 5:
+            if self.how_many_prints < 3:
+                print("Print more!")
+                self.how_many_prints += 1
+                self.set_bot_text("Wciśnij przycisk, aby wydrukować więcej kopii!<br>Drukuję " + str(self.how_many_prints) + "...", 65)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
