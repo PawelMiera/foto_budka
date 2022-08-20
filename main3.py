@@ -298,7 +298,7 @@ class FotoBudka(QDialog):
         self.current_print = 0
 
         self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
-                                        shutter=380000, frame_rate=1, iso=400, save_dir="saved_images",
+                                        shutter=480000, frame_rate=1, iso=400, save_dir="saved_images",
                                         pasek_filename="Pasek_v3.png")
 
         self.image_reader.EndSignal.connect(self.foto_end)
