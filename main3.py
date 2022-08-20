@@ -514,7 +514,7 @@ class FotoBudka(QDialog):
             if self.how_many_prints < self.max_prints:
                 print("Print more!")
                 self.how_many_prints += 1
-                self.set_bot_text("Wciśnij przycisk, aby wydrukować więcej kopii!<br>Drukuję " + str(self.current_print) + " z " + str(self.how_many_prints) + "...", 65)
+                self.set_bot_text("Wciśnij przycisk, aby wydrukować więcej kopii!<br>Drukuję " + str(self.current_print+1) + " z " + str(self.how_many_prints) + "...", 65)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_N:
