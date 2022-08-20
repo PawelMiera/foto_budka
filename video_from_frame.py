@@ -19,6 +19,7 @@ while(cap.isOpened()):
     if id % 2 == 0:
       if id < 235 and id >20:
         out_frames += 1
+        frame = cv2.resize(frame, (525, 840))
         images.append(frame)
 
   else:
@@ -28,7 +29,7 @@ print(id)
 
 images = np.array(images)
 
-cv2.imwrite("smile.png", cv2.resize(images[-1], (1050, 1680)))
+#cv2.imwrite("smile.png", cv2.resize(images[-1], (1050, 1680)))
 
 skvideo.io.vwrite("odliczanie_reduced.mp4", images)
 

@@ -215,7 +215,7 @@ class ImageReader(QThread):
     def generate_output_image(self):
         self.output_image = self.background.copy()
 
-        w = 572
+        w = 573
         h = 343
 
         x1 = 22
