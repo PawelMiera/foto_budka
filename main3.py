@@ -32,7 +32,7 @@ class CountdownShower(QThread):
 
         self.start_countdown = False
 
-        self.filename = 'odliczanie.mp4'
+        self.filename = 'odliczanie_reduced.mp4'
 
         self.cap = cv2.VideoCapture(self.filename)
 
@@ -103,7 +103,7 @@ class CountdownShower(QThread):
 class ImageReader(QThread):
     EndSignal = pyqtSignal()
     def __init__(self, camera_width, camera_height, camera_flip, camera_rotation, shutter, frame_rate, iso,
-                 save_dir, pasek_filename="Pasek_new.png"):
+                 save_dir, pasek_filename="Pasek_v3.png"):
         super().__init__()
         self.camera_height = camera_height
         self.camera_width = camera_width
@@ -218,11 +218,11 @@ class ImageReader(QThread):
         w = 572
         h = 343
 
-        x1 = 24
-        x2 = 24
-        x3 = 24
+        x1 = 22
+        x2 = 22
+        x3 = 21
         y1 = 103
-        y2 = 534
+        y2 = 533
         y3 = 963
 
         f1 = cv2.resize(self.frame_1, (w, h))
@@ -288,7 +288,7 @@ class FotoBudka(QDialog):
         self.smile = QPixmap("smile.png")
 
         CAMERA_BUTTON_PIN = 21
-        self.wait_before_countdown = 4000
+        self.wait_before_countdown = 1
         self.timeout_before_return = 15000
         self.wait_for_print = 19000
         self.foto_taken = False
@@ -298,13 +298,13 @@ class FotoBudka(QDialog):
 
         self.image_reader = ImageReader(camera_width=1920, camera_height=1080, camera_flip=0, camera_rotation=0,
                                         shutter=380000, frame_rate=1, iso=400, save_dir="saved_images",
-                                        pasek_filename="Pasek_new.png")
+                                        pasek_filename="Pasek_v3.png")
 
         self.image_reader.EndSignal.connect(self.foto_end)
         self.image_reader.start()
         self.current_state = 0
 
-        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 80)
+        self.countdown_shower = CountdownShower(self.img_width, self.img_height, 555)  #107
         self.countdown_shower.ImageUpdate.connect(self.CountdownUpdate)
         self.countdown_shower.EndSignal.connect(self.countdown_end)
         self.countdown_shower.start()
