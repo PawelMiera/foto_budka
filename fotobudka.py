@@ -5,6 +5,8 @@ import threading
 import time
 from enum import IntEnum
 import numpy as np
+from PIL import ImageFont, ImageDraw, Image
+import random
 
 
 class Rate:
@@ -75,7 +77,7 @@ class FlashControl:
 
 class CameraControl:
     def __init__(self, flash_control: FlashControl, frame_rate=5, exposure_time=300000, analogue_gain=8.0,
-                 size=(2028, 1080), format="RGB888", print_fps=False):
+                 size=(2028, 1080), img_format="RGB888", print_fps=False):
         self.print_fps = print_fps
 
         self.end = threading.Event()
@@ -86,10 +88,13 @@ class CameraControl:
 
         self.picam2 = Picamera2()
         controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
-        preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": format},
+        preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": img_format},
                                                                   controls=controls)
         self.picam2.configure(preview_config)
         self.picam2.start()
+
+        thread = threading.Thread(target=self.run)
+        thread.start()
 
     def run(self):
         fps = 0
@@ -99,6 +104,7 @@ class CameraControl:
             if self.photo_event.is_set():
                 self.flash_control.start_flash()
                 self.last_frame = self.picam2.capture_array()
+                self.photo_done_event.set()
             else:
                 _ = self.picam2.capture_array()
 
@@ -113,42 +119,190 @@ class CameraControl:
         self.photo_event.set()
         self.photo_done_event.clear()
 
+    def is_done(self):
+        return self.photo_done_event.is_set()
+
+    def get_photo(self):
+        return self.last_frame.copy()
+
+    def close(self):
+        self.end.set()
+
+
+class CameraControlSim:
+    def __init__(self, flash_control, frame_rate=5, exposure_time=300000, analogue_gain=8.0,
+                 size=(2028, 1080), img_format="RGB888", print_fps=False):
+        self.print_fps = print_fps
+
+        self.end = threading.Event()
+        self.photo_event = threading.Event()
+        self.photo_done_event = threading.Event()
+        # self.flash_control = flash_control
+        self.last_frame = None
+
+        self.cap = cv2.VideoCapture(0)
+
+        thread = threading.Thread(target=self.run)
+        thread.start()
+
+        #
+        # self.picam2 = Picamera2()
+        # controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
+        # preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": format},
+        #                                                           controls=controls)
+        # self.picam2.configure(preview_config)
+        # self.picam2.start()
+
+    def run(self):
+        fps = 0
+        last_print_time = time.time()
+
+        while not self.end.is_set():
+            if self.photo_event.is_set():
+                # self.flash_control.start_flash()
+                ret, self.last_frame = self.cap.read()
+                self.photo_done_event.set()
+            else:
+                _, _ = self.cap.read()
+
+            if self.print_fps:
+                fps += 1
+                if time.time() - last_print_time > 1:
+                    last_print_time = time.time()
+                    print(fps)
+                    fps = 0
+
+    def start_photo(self):
+        self.photo_event.set()
+        self.photo_done_event.clear()
+
+    def is_done(self):
+        return self.photo_done_event.is_set()
+
+    def get_photo(self):
+        return self.last_frame.copy()
+
     def close(self):
         self.end.set()
 
 
 class State(IntEnum):
     HOME = 0
-    COUNTDOWN_1 = 1
-    PHOTO_1 = 2
-    COUNTDOWN_2 = 3
-    PHOTO_2 = 4
-    COUNTDOWN_3 = 5
-    PHOTO_3 = 6
-    PRINT = 7
+    PREPARE = 1
+    COUNTDOWN_1 = 2
+    PHOTO_1 = 3
+    COUNTDOWN_2 = 4
+    PHOTO_2 = 5
+    COUNTDOWN_3 = 6
+    PHOTO_3 = 7
+    CONFIRM_PRINT = 8
+    PRINT = 9
 
 
 # class ResourceTypes(IntEnum):
 #     IMAGE = 0
 #     VIDEO = 1
 
+def draw_centered_text(text, image, font):
+    MAX_W, MAX_H = image.size
+    draw = ImageDraw.Draw(image)
+
+    lines = text.split("\n")
+
+    current_h, pad = 10, 10
+    for line in lines:
+        w, h = draw.textsize(line, font=font)
+        draw.text(((MAX_W - w) / 2, current_h), line, font=font)
+        current_h += h + pad
+    return image
+
 
 class MainWindow:
-    def __init__(self, width=1080, height=1920, fps=30, home_file="countdown_675_1080_reduced.mp4"):
+    def __init__(self, camera_control: CameraControlSim, size=(1080, 1920), fps=30, home_file="black.png",
+                 countdown_file="countdown_675_1080_reduced.mp4", output_image_background_filename="black.png",
+                 top_font_size=(1060, 400), top_font_pos=(10, 30), bot_font_size=(1060, 400), bot_font_pos=(10, 1490),
+                 frame_preview_size=(1014, 540), frame_preview_pos=(33, 500), frame_preview_timeout=8.0,
+                 font="font.ttf", font_size=120):
 
         self.current_state = State.HOME
 
-        self.width = width
-        self.height = height
+        self.width = size[0]
+        self.height = size[1]
+
+        self.top_font_pos = top_font_pos
+        self.bot_font_pos = bot_font_pos
+        self.top_font_size = top_font_size
+        self.bot_font_size = bot_font_size
+
+        self.frame_preview_size = frame_preview_size
+        self.frame_preview_pos = frame_preview_pos
+
+        self.empty_image_top_font = Image.new('RGB', self.top_font_size)
+        self.empty_image_bop_font = Image.new('RGB', self.bot_font_size)
+
+        self.empty_background = np.zeros((self.height, self.width, 3), np.uint8)
+
+        self.font = ImageFont.truetype(font, font_size)
+
+        # image = draw_centered_text("Wciśnij przycisk,\n aby wydrukować!\nPoczekaj 15 sekund,\n aby anulować!",
+        #                    self.empty_image_top_font.copy(), self.font)
+        #
+        # cv2_im_processed = np.array(image)
+        #
+        # cv2.imshow("XD", cv2_im_processed)
+        # cv2.waitKey(0)
 
         self.home_resource, self.home_resource_size = self.read_file(home_file)
         self.home_resource_id = 0
 
+        self.countdown_resource, self.countdown_resource_size = self.read_file(countdown_file)
+        self.countdown_resource_id = 0
+
         self.fps = fps
+
+        self.current_state = 0
+        self.how_many_prints = 1
+        self.current_print = 0
+        self.frame_preview_time_start = time.time()
+        self.frame_preview_timeout = frame_preview_timeout
+
+        self.camera_control = camera_control
+
+        self.photo_main_screen = None
+
+        self.frame_1 = None
+        self.frame_2 = None
+        self.frame_3 = None
+
+        self.output_image_background = cv2.imread(output_image_background_filename)
+        self.output_image = None
+        self.img_id = 0
+
+        self.top_texts = ["Rewelacyjnie!", "Czadowo!", "Gitówa!", "Całkiem, całkiem!", "Pięknie!", 'Bomba!', 'Sztos!']
+        self.bot_texts = ["Nadchodzi", "Teraz", "Przybywa", "Już za chwilę", "Trzy, dwa, jeden", "Wkracza", "Wskakuje",
+                          "Wlatuje"]
+
+        self.current_texts_top_id = []
+        self.current_texts_bot_id = []
+
+        self.reset()
 
         # _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
         # cv2.moveWindow("window", 0, 0)
         # cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    def reset(self):
+        while len(self.current_texts_bot_id) < 4:
+            text_id = random.randint(0, len(self.bot_texts) - 1)
+
+            if not (text_id in self.current_texts_bot_id):
+                self.current_texts_bot_id.append(text_id)
+
+        while len(self.current_texts_top_id) < 4:
+            text_id = random.randint(0, len(self.top_texts) - 1)
+
+            if not (text_id in self.current_texts_top_id):
+                self.current_texts_top_id.append(text_id)
 
     def run(self):
         rate = Rate(self.fps)
@@ -157,7 +311,73 @@ class MainWindow:
             if self.current_state == State.HOME:
                 frame = self.handle_home()
 
-                cv2.imshow("window", frame)
+            elif self.current_state == State.PREPARE:
+                if self.photo_main_screen is None:
+                    self.photo_main_screen = self.generate_photo_main_screen("Przygotuj się do\nzdjęcia!",
+                                                                             self.bot_texts[
+                                                                                 self.current_texts_bot_id[0]]
+                                                                             + "\nZdjęcie nr 1", None)
+                frame = self.photo_main_screen
+
+                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
+                    self.current_state = State.COUNTDOWN_1
+
+            elif self.current_state == State.PHOTO_1:
+                if self.photo_main_screen is None:
+                    self.photo_main_screen = self.generate_photo_main_screen(
+                        self.top_texts[self.current_texts_top_id[1]],
+                        self.bot_texts[self.current_texts_bot_id[1]]
+                        + "\nZdjęcie nr 2", self.frame_1)
+                frame = self.photo_main_screen
+
+                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
+                    self.current_state = State.COUNTDOWN_2
+
+            elif self.current_state == State.PHOTO_2:
+                if self.photo_main_screen is None:
+                    self.photo_main_screen = self.generate_photo_main_screen(
+                        self.top_texts[self.current_texts_top_id[2]],
+                        self.bot_texts[self.current_texts_bot_id[2]]
+                        + "\nZdjęcie nr 3", self.frame_2)
+                frame = self.photo_main_screen
+
+                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
+                    self.current_state = State.COUNTDOWN_3
+
+            elif self.current_state == State.PHOTO_3:
+                if self.photo_main_screen is None:
+                    self.photo_main_screen = self.generate_photo_main_screen(
+                        self.top_texts[self.current_texts_top_id[3]],
+                        None, self.frame_3)
+                frame = self.photo_main_screen
+                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout / 2:
+                    pass
+
+            elif self.current_state == State.COUNTDOWN_1 or self.current_state == State.COUNTDOWN_2 or \
+                    self.current_state == State.COUNTDOWN_3:
+                frame, done = self.handle_countdown()
+
+                if done:
+                    self.camera_control.start_photo()
+
+                    while not self.camera_control.is_done():
+                        time.sleep(0.05)
+
+                    if self.current_state == State.COUNTDOWN_1:
+                        self.frame_1 = self.camera_control.get_photo()
+                        self.current_state = State.PHOTO_1
+                    elif self.current_state == State.COUNTDOWN_2:
+                        self.frame_2 = self.camera_control.get_photo()
+                        self.current_state = State.PHOTO_2
+                    elif self.current_state == State.COUNTDOWN_3:
+                        self.frame_3 = self.camera_control.get_photo()
+                        self.current_state = State.PHOTO_3
+
+                    self.frame_preview_time_start = time.time()
+                    self.countdown_resource_id = 0
+                    self.photo_main_screen = None
+
+            cv2.imshow("window", cv2.resize(frame, (500, 900)))
 
             sleep_millis = rate.get_remaining_time_millis_cv2()
             print("sleep:", sleep_millis)
@@ -170,8 +390,55 @@ class MainWindow:
                 print("Click")
                 self.button_click()
 
+    def generate_photo_main_screen(self, top_text, bot_text, preview):
+        frame = self.empty_background.copy()
+
+        if top_text is not None:
+            frame = self.set_top_text(frame, top_text)
+        if bot_text is not None:
+            frame = self.set_bot_text(frame, bot_text)
+        if preview is not None:
+            frame = self.set_frame_preview(frame, preview)
+        return frame
+
+    def set_bot_text(self, frame, text):
+        image = draw_centered_text(text, self.empty_image_top_font.copy(), self.font)
+        cv2_im_processed = np.array(image)
+        x0 = self.bot_font_pos[0]
+        x1 = self.bot_font_size[0] + self.bot_font_pos[0]
+        y0 = self.bot_font_pos[1]
+        y1 = self.bot_font_size[1] + self.bot_font_pos[1]
+        frame[y0:y1, x0:x1] = cv2_im_processed
+
+        return frame
+
+    def set_top_text(self, frame, text):
+        image = draw_centered_text(text, self.empty_image_top_font.copy(), self.font)
+        cv2_im_processed = np.array(image)
+        x0 = self.top_font_pos[0]
+        x1 = self.top_font_size[0] + self.top_font_pos[0]
+        y0 = self.top_font_pos[1]
+        y1 = self.top_font_size[1] + self.top_font_pos[1]
+        frame[y0:y1, x0:x1] = cv2_im_processed
+
+        return frame
+
+    def set_frame_preview(self, frame, preview):
+        x0 = self.frame_preview_pos[0]
+        x1 = self.frame_preview_size[0] + self.frame_preview_pos[0]
+        y0 = self.frame_preview_pos[1]
+        y1 = self.frame_preview_size[1] + self.frame_preview_pos[1]
+        preview = cv2.resize(preview, self.frame_preview_size)
+        frame[y0:y1, x0:x1] = preview
+
+        return frame
+
     def button_click(self):
-        pass
+        if self.current_state == State.HOME:
+            self.current_state = State.PREPARE
+            self.frame_preview_time_start = time.time()
+        elif self.current_state == State.CONFIRM_PRINT:
+            pass
         # if self.current_state == 0:
         #     self.current_state += 1
 
@@ -203,12 +470,23 @@ class MainWindow:
             return self.home_resource
         else:
             resource = self.home_resource[self.home_resource_id]
-            self.home_resource_id += 1
 
-            if self.home_resource_id >= self.home_resource_size:
+            if self.home_resource_id < self.home_resource_size - 1:
+                self.home_resource_id += 1
+            else:
                 self.home_resource_id = 0
 
             return resource
+
+    def handle_countdown(self):
+        done = False
+        resource = self.countdown_resource[self.countdown_resource_id]
+
+        if self.countdown_resource_id < self.countdown_resource_size - 1:
+            self.countdown_resource_id += 1
+        else:
+            done = True
+        return resource, done
 
     def read_file(self, filename):
         values = filename.split(".")
@@ -244,12 +522,14 @@ class MainWindow:
 
 
 if __name__ == "__main__":
-    main_window = MainWindow()
+    camera_control = CameraControlSim(None)
+
+    main_window = MainWindow(camera_control)
     main_window.run()
     # flash_control = FlashControl()
     #
     # camera_control = CameraControl(flash_control)
 
     # flash_control.close()
-    # camera_control.close()
+    camera_control.close()
     cv2.destroyAllWindows()
