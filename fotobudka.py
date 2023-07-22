@@ -13,22 +13,24 @@ class Rate:
         self.last_time = time.time()
 
     def sleep(self):
-        now = time.time()
-        time_diff = now - self.last_time
+        time_diff = time.time() - self.last_time
         sleep_time = self.rate_time - time_diff
-        self.last_time = now
         if sleep_time > 0:
             time.sleep(sleep_time)
 
-    def get_remaining_time_millis(self):
-        now = time.time()
-        time_diff = now - self.last_time
+        self.last_time = time.time()
+
+    def get_remaining_time_millis_cv2(self):
+        time_diff = time.time() - self.last_time
         sleep_time = self.rate_time - time_diff
-        self.last_time = now
+        sleep_time = int(sleep_time * 1000)
         if sleep_time > 0:
-            return int(sleep_time * 1000)
+            return sleep_time
         else:
             return 1
+
+    def update_last_time(self):
+        self.last_time = time.time()
 
 
 class FlashControl:
@@ -132,7 +134,7 @@ class State(IntEnum):
 
 
 class MainWindow:
-    def __init__(self, width=1080, height=1920, home_file="countdown_675_1080_reduced.mp4"):
+    def __init__(self, width=1080, height=1920, fps=30, home_file="countdown_675_1080_reduced.mp4"):
 
         self.current_state = State.HOME
 
@@ -142,12 +144,14 @@ class MainWindow:
         self.home_resource, self.home_resource_size = self.read_file(home_file)
         self.home_resource_id = 0
 
+        self.fps = fps
+
         # _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
         # cv2.moveWindow("window", 0, 0)
         # cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     def run(self):
-        rate = Rate(30)
+        rate = Rate(self.fps)
         while True:
 
             if self.current_state == State.HOME:
@@ -155,9 +159,10 @@ class MainWindow:
 
                 cv2.imshow("window", frame)
 
-            sleep_millis = rate.get_remaining_time_millis()
-            print(sleep_millis)
+            sleep_millis = rate.get_remaining_time_millis_cv2()
+            print("sleep:", sleep_millis)
             key = cv2.waitKey(sleep_millis)
+            rate.update_last_time()
 
             if key == ord("q"):
                 break
@@ -166,19 +171,20 @@ class MainWindow:
                 self.button_click()
 
     def button_click(self):
-        if self.current_state == 0:
-            self.current_state += 1
+        pass
+        # if self.current_state == 0:
+        #     self.current_state += 1
 
-            # self.set_top_text("Przygotuj się do zdjęcia!")
-            #
-            # self.set_bot_text(self.bop_texts[self.current_texts_bot_id[0]] + "<br>Zdjęcie nr 1")
-            #
-            # self.sleep(self.wait_before_countdown)
-            #
-            # self.set_top_text("")
-            # self.set_bot_text("")
-            #
-            # self.countdown_shower.start_counting()
+        # self.set_top_text("Przygotuj się do zdjęcia!")
+        #
+        # self.set_bot_text(self.bop_texts[self.current_texts_bot_id[0]] + "<br>Zdjęcie nr 1")
+        #
+        # self.sleep(self.wait_before_countdown)
+        #
+        # self.set_top_text("")
+        # self.set_bot_text("")
+        #
+        # self.countdown_shower.start_counting()
 
         # elif self.current_state == 4:
         #     self.current_state += 1
