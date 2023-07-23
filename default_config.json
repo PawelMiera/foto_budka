@@ -18,7 +18,7 @@
         "size": [1080, 1920],
         "fps": 30,
         "home_file": "resources/fotobudka_home.mp4",
-        "countdown_file": "resources/countdown_675_1080_reduced.mp4",
+        "countdown_file": "resources/odliczanie.mp4",
         "output_image_background_filename": "resources/pasek.png",
         "print_background_filename": "resources/print_background.png",
         "save_path": "saved_images",
@@ -45,7 +45,7 @@
         "confirm_text_pos": [10, 1280],
         "confirm_img_preview_size": [434, 1224],
         "confirm_img_preview_pos": [323, 30],
-        "show_sleep_time": false,
+        "show_sleep_time": true,
         "test": false
     }
 }
