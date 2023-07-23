@@ -218,16 +218,27 @@ def draw_centered_text(text, image, font):
 
 
 class MainWindow:
-    def __init__(self, camera_control: CameraControlSim, size=(1080, 1920), fps=30, home_file="black.png",
-                 countdown_file="countdown_675_1080_reduced.mp4", output_image_background_filename="black.png",
+    def __init__(self, camera_control: CameraControlSim, size=(1080, 1920), fps=30,
+                 home_file="resources/fotobudka_home.mp4",
+                 countdown_file="resources/countdown_675_1080_reduced.mp4",
                  top_font_size=(1060, 400), top_font_pos=(10, 30), bot_font_size=(1060, 400), bot_font_pos=(10, 1490),
-                 frame_preview_size=(1014, 540), frame_preview_pos=(33, 500), frame_preview_timeout=8.0,
-                 font="font.ttf", font_size=120):
+                 frame_preview_size=(1014, 540), frame_preview_pos=(33, 500), frame_preview_timeout=2.0,
+                 font="resources/tahoma_font.ttf", font_size=130,
+                 output_image_background_filename="resources/pasek.png",
+                 print_background="resources/print_background.png", output_image_size=(620, 1748),
+                 print_image_size=(1240, 1748),
+                 small_img_size=(573, 343),
+                 small_img_1_pos=(22, 103), small_img_2_pos=(22, 533), small_img_3_pos=(22, 963),
+                 confirm_img_preview_size=(434, 1224), confirm_img_preview_pos=(323, 30),
+                 confirm_text_size=(1060, 600), confirm_text_pos=(10, 1280), confirm_text_font_size=100,
+                 show_sleep_time=True):
 
         self.current_state = State.HOME
 
         self.width = size[0]
         self.height = size[1]
+
+        self.show_sleep_time = show_sleep_time
 
         self.top_font_pos = top_font_pos
         self.bot_font_pos = bot_font_pos
@@ -237,12 +248,20 @@ class MainWindow:
         self.frame_preview_size = frame_preview_size
         self.frame_preview_pos = frame_preview_pos
 
+        self.confirm_image_preview_pos = confirm_img_preview_pos
+        self.confirm_image_preview_size = confirm_img_preview_size
+
+        self.confirm_text_pos = confirm_text_pos
+        self.confirm_text_size = confirm_text_size
+
         self.empty_image_top_font = Image.new('RGB', self.top_font_size)
         self.empty_image_bop_font = Image.new('RGB', self.bot_font_size)
+        self.empty_image_confirm_text = Image.new('RGB', self.confirm_text_size)
 
         self.empty_background = np.zeros((self.height, self.width, 3), np.uint8)
 
         self.font = ImageFont.truetype(font, font_size)
+        self.confirm_font = ImageFont.truetype(font, confirm_text_font_size)
 
         # image = draw_centered_text("Wciśnij przycisk,\n aby wydrukować!\nPoczekaj 15 sekund,\n aby anulować!",
         #                    self.empty_image_top_font.copy(), self.font)
@@ -274,9 +293,18 @@ class MainWindow:
         self.frame_2 = None
         self.frame_3 = None
 
-        self.output_image_background = cv2.imread(output_image_background_filename)
+        self.output_image_background = cv2.resize(cv2.imread(output_image_background_filename), output_image_size)
         self.output_image = None
         self.img_id = 0
+
+        self.print_background = cv2.resize(cv2.imread(print_background), print_image_size)
+        self.print_image_size = print_image_size
+        self.print_image = None
+
+        self.small_img_1_pos = small_img_1_pos
+        self.small_img_2_pos = small_img_2_pos
+        self.small_img_3_pos = small_img_3_pos
+        self.small_img_size = small_img_size
 
         self.top_texts = ["Rewelacyjnie!", "Czadowo!", "Gitówa!", "Całkiem, całkiem!", "Pięknie!", 'Bomba!', 'Sztos!']
         self.bot_texts = ["Nadchodzi", "Teraz", "Przybywa", "Już za chwilę", "Trzy, dwa, jeden", "Wkracza", "Wskakuje",
@@ -306,6 +334,7 @@ class MainWindow:
 
     def run(self):
         rate = Rate(self.fps)
+        frame = self.empty_background.copy()
         while True:
 
             if self.current_state == State.HOME:
@@ -351,7 +380,9 @@ class MainWindow:
                         None, self.frame_3)
                 frame = self.photo_main_screen
                 if time.time() - self.frame_preview_time_start > self.frame_preview_timeout / 2:
-                    pass
+                    self.generate_output_image()
+                    self.photo_main_screen = None
+                    self.current_state = State.CONFIRM_PRINT
 
             elif self.current_state == State.COUNTDOWN_1 or self.current_state == State.COUNTDOWN_2 or \
                     self.current_state == State.COUNTDOWN_3:
@@ -377,10 +408,21 @@ class MainWindow:
                     self.countdown_resource_id = 0
                     self.photo_main_screen = None
 
-            cv2.imshow("window", cv2.resize(frame, (500, 900)))
+            elif self.current_state == State.CONFIRM_PRINT:
+                if self.photo_main_screen is None:
+                    self.photo_main_screen = self.generate_photo_confirm_screen \
+                        ("Wciśnij przycisk,\naby wydrukować!\nPoczekaj 15 sekund,\naby anulować!", self.output_image)
+
+                frame = self.photo_main_screen
+
+            if self.show_sleep_time:
+                sleep_millis = rate.get_remaining_time_millis_cv2()
+                cv2.putText(frame, str(sleep_millis), (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, 2)
+
+            cv2.imshow("window", cv2.resize(frame, (540, 960)))
 
             sleep_millis = rate.get_remaining_time_millis_cv2()
-            print("sleep:", sleep_millis)
+
             key = cv2.waitKey(sleep_millis)
             rate.update_last_time()
 
@@ -389,6 +431,37 @@ class MainWindow:
             elif key == ord(" "):
                 print("Click")
                 self.button_click()
+
+    def generate_photo_confirm_screen(self, bot_text, preview):
+        frame = self.empty_background.copy()
+        frame = self.set_bot_text_confirm(frame, bot_text)
+        frame = self.set_confirm_frame_preview(frame, preview)
+
+        return frame
+
+    def generate_output_image(self):
+        self.output_image = self.output_image_background.copy()
+
+        w = self.small_img_size[0]
+        h = self.small_img_size[1]
+
+        x1 = self.small_img_1_pos[0]
+        x2 = self.small_img_2_pos[0]
+        x3 = self.small_img_3_pos[0]
+        y1 = self.small_img_1_pos[1]
+        y2 = self.small_img_2_pos[1]
+        y3 = self.small_img_3_pos[1]
+
+        f1 = cv2.resize(self.frame_1, (w, h))
+        f2 = cv2.resize(self.frame_2, (w, h))
+        f3 = cv2.resize(self.frame_3, (w, h))
+
+        self.output_image[y1:y1 + h, x1:x1 + w] = f1
+        self.output_image[y2:y2 + h, x2:x2 + w] = f2
+        self.output_image[y3:y3 + h, x3:x3 + w] = f3
+
+        self.print_image = self.print_background.copy()
+        self.print_image[0:self.print_image_size[1], 0:int(self.print_image_size[0] / 2)] = self.output_image
 
     def generate_photo_main_screen(self, top_text, bot_text, preview):
         frame = self.empty_background.copy()
@@ -399,6 +472,27 @@ class MainWindow:
             frame = self.set_bot_text(frame, bot_text)
         if preview is not None:
             frame = self.set_frame_preview(frame, preview)
+        return frame
+
+    def set_bot_text_confirm(self, frame, text):
+        image = draw_centered_text(text, self.empty_image_confirm_text.copy(), self.confirm_font)
+        cv2_im_processed = np.array(image)
+        x0 = self.confirm_text_pos[0]
+        x1 = self.confirm_text_size[0] + self.confirm_text_pos[0]
+        y0 = self.confirm_text_pos[1]
+        y1 = self.confirm_text_size[1] + self.confirm_text_pos[1]
+        frame[y0:y1, x0:x1] = cv2_im_processed
+
+        return frame
+
+    def set_confirm_frame_preview(self, frame, preview):
+        x0 = self.confirm_image_preview_pos[0]
+        x1 = self.confirm_image_preview_size[0] + self.confirm_image_preview_pos[0]
+        y0 = self.confirm_image_preview_pos[1]
+        y1 = self.confirm_image_preview_size[1] + self.confirm_image_preview_pos[1]
+        preview = cv2.resize(preview, self.confirm_image_preview_size)
+        frame[y0:y1, x0:x1] = preview
+
         return frame
 
     def set_bot_text(self, frame, text):
