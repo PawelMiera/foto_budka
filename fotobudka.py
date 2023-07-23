@@ -617,7 +617,7 @@ class MainWindow:
 
 
 if __name__ == "__main__":
-    test = True
+    test = False
     if not test:
         from picamera2 import Picamera2
         import RPi.GPIO as GPIO
