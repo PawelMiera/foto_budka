@@ -230,7 +230,7 @@ class MainWindow:
                  small_img_1_pos=(22, 103), small_img_2_pos=(22, 533), small_img_3_pos=(22, 963),
                  confirm_img_preview_size=(434, 1224), confirm_img_preview_pos=(323, 30),
                  confirm_text_size=(1060, 600), confirm_text_pos=(10, 1280), confirm_text_font_size=100,
-                 show_sleep_time=True):
+                 show_sleep_time=True, test=False):
 
         self.current_state = State.HOME
 
@@ -313,10 +313,11 @@ class MainWindow:
         self.current_texts_bot_id = []
 
         self.reset()
-
-        # _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
-        # cv2.moveWindow("window", 0, 0)
-        # cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        self.test = test
+        if not self.test:
+            _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
+            cv2.moveWindow("window", 0, 0)
+            cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     def reset(self):
         while len(self.current_texts_bot_id) < 4:
@@ -420,7 +421,9 @@ class MainWindow:
                 frame[:40, :40] = empty
                 cv2.putText(frame, str(sleep_millis), (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, 2)
 
-            cv2.imshow("window", cv2.resize(frame, (540, 960)))
+            if self.test:
+                frame = cv2.resize(frame, (540, 960))
+            cv2.imshow("window", frame)
 
             sleep_millis = rate.get_remaining_time_millis_cv2()
 
@@ -628,7 +631,7 @@ if __name__ == "__main__":
     else:
         camera_control = CameraControlSim(None)
 
-    main_window = MainWindow(camera_control)
+    main_window = MainWindow(camera_control, test=test)
     main_window.run()
 
     if not test:
