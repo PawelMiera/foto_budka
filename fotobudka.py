@@ -416,6 +416,8 @@ class MainWindow:
 
             if self.show_sleep_time:
                 sleep_millis = rate.get_remaining_time_millis_cv2()
+                empty = np.zeros((40, 40, 3), np.uint8)
+                frame[:40, :40] = empty
                 cv2.putText(frame, str(sleep_millis), (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, 2)
 
             cv2.imshow("window", cv2.resize(frame, (540, 960)))
@@ -615,7 +617,7 @@ class MainWindow:
 
 
 if __name__ == "__main__":
-    test = False
+    test = True
     if not test:
         from picamera2 import Picamera2
         import RPi.GPIO as GPIO
