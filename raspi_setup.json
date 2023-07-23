@@ -8,8 +8,8 @@
         "exposure_time": 300000,
         "analogue_gain": 8.0,
         "img_format": "RGB888",
-        "print_fps": false,
-        "show_preview": false,
+        "print_fps": true,
+        "show_preview": true,
         "disable_camera": false
 
     },
@@ -52,7 +52,7 @@
         "confirm_text_pos": [10, 1280],
         "confirm_img_preview_size": [434, 1224],
         "confirm_img_preview_pos": [323, 30],
-        "show_sleep_time": false,
+        "show_sleep_time": true,
         "disable_fullscreen": false,
         "size_down_view": false
     }

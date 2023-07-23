@@ -13,6 +13,7 @@ from datetime import datetime
 import json
 import argparse
 
+
 class Rate:
     def __init__(self, rate):
         self.rate_time = 1.0 / rate
@@ -40,25 +41,31 @@ class Rate:
 
 
 class FlashControl:
-    def __init__(self, gpio_pin=22):
-        print("Starting flash")
+    def __init__(self, gpio_pin=22, disable_flash=False):
         self.flash_event = threading.Event()
         self.end = threading.Event()
-        self.gpio_pin = gpio_pin
-        GPIO.setmode(GPIO.BCM)
+        self.disable_flash = disable_flash
+        if not self.disable_flash:
 
-        GPIO.setup(self.gpio_pin, GPIO.OUT)
+            import RPi.GPIO as GPIO
 
-        GPIO.output(self.gpio_pin, GPIO.HIGH)
+            self.gpio_pin = gpio_pin
+            GPIO.setmode(GPIO.BCM)
 
-        for _ in range(2):
-            GPIO.output(self.gpio_pin, GPIO.LOW)
-            time.sleep(0.1)
+            GPIO.setup(self.gpio_pin, GPIO.OUT)
+
             GPIO.output(self.gpio_pin, GPIO.HIGH)
-            time.sleep(0.2)
+
+            for _ in range(2):
+                GPIO.output(self.gpio_pin, GPIO.LOW)
+                time.sleep(0.1)
+                GPIO.output(self.gpio_pin, GPIO.HIGH)
+                time.sleep(0.2)
 
         thread = threading.Thread(target=self.run)
         thread.start()
+
+        print("Flash started!")
 
     def start_flash(self):
         self.flash_event.set()
@@ -68,13 +75,15 @@ class FlashControl:
 
         while not self.end.is_set():
             if self.flash_event.is_set():
-                GPIO.output(self.gpio_pin, GPIO.LOW)
-                time.sleep(0.1)
-                GPIO.output(self.gpio_pin, GPIO.HIGH)
+                if not self.disable_flash:
+                    GPIO.output(self.gpio_pin, GPIO.LOW)
+                    time.sleep(0.1)
+                    GPIO.output(self.gpio_pin, GPIO.HIGH)
                 self.flash_event.clear()
 
             rate.sleep()
-        GPIO.cleanup()  # cleanup all GPIO
+        if not self.disable_flash:
+            GPIO.cleanup()  # cleanup all GPIO
 
     def close(self):
         self.end.set()
@@ -82,9 +91,11 @@ class FlashControl:
 
 class CameraControl:
     def __init__(self, flash_control: FlashControl, frame_rate=5, exposure_time=300000, analogue_gain=8.0,
-                 size=(2028, 1080), img_format="RGB888", print_fps=False, show_preview=False):
+                 size=(2028, 1080), img_format="RGB888", print_fps=False, show_preview=False, disable_camera=False):
         self.print_fps = print_fps
         self.show_preview = show_preview
+        self.disable_camera = disable_camera
+        self.size = size
 
         self.end = threading.Event()
         self.photo_event = threading.Event()
@@ -92,15 +103,20 @@ class CameraControl:
         self.flash_control = flash_control
         self.last_frame = None
 
-        self.picam2 = Picamera2()
-        controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
-        preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": img_format},
-                                                                  controls=controls)
-        self.picam2.configure(preview_config)
-        self.picam2.start()
+        if not self.disable_camera:
+            from picamera2 import Picamera2
+
+            self.picam2 = Picamera2()
+            controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
+            preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": img_format},
+                                                                      controls=controls)
+            self.picam2.configure(preview_config)
+            self.picam2.start()
 
         thread = threading.Thread(target=self.run)
         thread.start()
+
+        print("Camera started!")
 
     def run(self):
         fps = 0
@@ -108,20 +124,27 @@ class CameraControl:
 
         while not self.end.is_set():
             if self.photo_event.is_set():
-                self.flash_control.start_flash()
-                self.last_frame = self.picam2.capture_array()
+                if not self.disable_camera:
+                    self.flash_control.start_flash()
+                    self.last_frame = self.picam2.capture_array()
+                else:
+                    self.last_frame = np.ones((self.size[1], self.size[0], 3), np.uint8) * 255
+
                 self.photo_done_event.set()
             else:
-                frame = self.picam2.capture_array()
-                if self.show_preview:
-                    cv2.imshow("preview", frame)
-                    cv2.waitKey(1)
+                if not self.disable_camera:
+                    frame = self.picam2.capture_array()
+                    if self.show_preview:
+                        cv2.imshow("preview", frame)
+                        cv2.waitKey(1)
+                else:
+                    time.sleep(0.2)
 
             if self.print_fps:
                 fps += 1
                 if time.time() - last_print_time > 1:
                     last_print_time = time.time()
-                    print(fps)
+                    print("Camera FPS: ", fps)
                     fps = 0
 
     def start_photo(self):
@@ -138,72 +161,72 @@ class CameraControl:
         self.end.set()
 
 
-class CameraControlSim:
-    def __init__(self, flash_control, frame_rate=5, exposure_time=300000, analogue_gain=8.0,
-                 size=(2028, 1080), img_format="RGB888", print_fps=False, show_preview=False):
-        self.print_fps = print_fps
-        self.show_preview = show_preview
-
-        self.end = threading.Event()
-        self.photo_event = threading.Event()
-        self.photo_done_event = threading.Event()
-        # self.flash_control = flash_control
-        self.last_frame = None
-
-        self.cap = cv2.VideoCapture(0)
-
-        thread = threading.Thread(target=self.run)
-        thread.start()
-
-        #
-        # self.picam2 = Picamera2()
-        # controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
-        # preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": format},
-        #                                                           controls=controls)
-        # self.picam2.configure(preview_config)
-        # self.picam2.start()
-
-    def run(self):
-        fps = 0
-        last_print_time = time.time()
-
-        while not self.end.is_set():
-            if self.photo_event.is_set():
-                # self.flash_control.start_flash()
-                ret, self.last_frame = self.cap.read()
-                self.photo_done_event.set()
-            else:
-                _, frame= self.cap.read()
-                if self.show_preview:
-                    cv2.imshow("preview", frame)
-                    cv2.waitKey(1)
-
-            if self.print_fps:
-                fps += 1
-                if time.time() - last_print_time > 1:
-                    last_print_time = time.time()
-                    print(fps)
-                    fps = 0
-        self.cap.release()
-
-    def start_photo(self):
-        self.photo_event.set()
-        self.photo_done_event.clear()
-
-    def is_done(self):
-        return self.photo_done_event.is_set()
-
-    def get_photo(self):
-        return self.last_frame.copy()
-
-    def close(self):
-        self.end.set()
+# class CameraControlSim:
+#     def __init__(self, flash_control, frame_rate=5, exposure_time=300000, analogue_gain=8.0,
+#                  size=(2028, 1080), img_format="RGB888", print_fps=False, show_preview=False):
+#         self.print_fps = print_fps
+#         self.show_preview = show_preview
+#
+#         self.end = threading.Event()
+#         self.photo_event = threading.Event()
+#         self.photo_done_event = threading.Event()
+#         # self.flash_control = flash_control
+#         self.last_frame = None
+#
+#         self.cap = cv2.VideoCapture(0)
+#
+#         thread = threading.Thread(target=self.run)
+#         thread.start()
+#
+#         #
+#         # self.picam2 = Picamera2()
+#         # controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
+#         # preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": format},
+#         #                                                           controls=controls)
+#         # self.picam2.configure(preview_config)
+#         # self.picam2.start()
+#
+#     def run(self):
+#         fps = 0
+#         last_print_time = time.time()
+#
+#         while not self.end.is_set():
+#             if self.photo_event.is_set():
+#                 # self.flash_control.start_flash()
+#                 ret, self.last_frame = self.cap.read()
+#                 self.photo_done_event.set()
+#             else:
+#                 _, frame= self.cap.read()
+#                 if self.show_preview:
+#                     cv2.imshow("preview", frame)
+#                     cv2.waitKey(1)
+#
+#             if self.print_fps:
+#                 fps += 1
+#                 if time.time() - last_print_time > 1:
+#                     last_print_time = time.time()
+#                     print(fps)
+#                     fps = 0
+#         self.cap.release()
+#
+#     def start_photo(self):
+#         self.photo_event.set()
+#         self.photo_done_event.clear()
+#
+#     def is_done(self):
+#         return self.photo_done_event.is_set()
+#
+#     def get_photo(self):
+#         return self.last_frame.copy()
+#
+#     def close(self):
+#         self.end.set()
 
 
 class PrinterControl:
-    def __init__(self, test, wait_for_print):
-        self.test = test
-        if not self.test:
+    def __init__(self, wait_for_print, disable_printer=False):
+        self.disable_printer = disable_printer
+        if not self.disable_printer:
             self.conn = cups.Connection()
             printers = self.conn.getPrinters()
             self.default_printer = list(printers.keys())[0]
@@ -218,6 +241,8 @@ class PrinterControl:
         thread = threading.Thread(target=self.run)
         thread.start()
 
+        print("Printer started!")
+
     def run(self):
         rate = Rate(10)
 
@@ -226,7 +251,7 @@ class PrinterControl:
                 self.print_changed.set()
                 self.print_done_event.clear()
                 filename = self.print_queue.get()
-                if not self.test:
+                if not self.disable_printer:
                     self.conn.printFile(self.default_printer, filename, "boothy", {'fit-to-page': 'True'})
                 print("Print job successfully created: ", filename)
                 print("Sleeping for:", self.wait_for_print)
@@ -287,21 +312,18 @@ def draw_centered_text(text, image, font):
 
 
 class MainWindow:
-    def __init__(self, camera_control: CameraControlSim, printer: PrinterControl, size=(1080, 1920), fps=30,
-                 home_file="resources/fotobudka_home.mp4",
-                 countdown_file="resources/countdown_675_1080_reduced.mp4",
+    def __init__(self, camera_control: CameraControl, printer: PrinterControl, size=(1080, 1920), fps=30,
+                 home_file="resources/fotobudka_home.mp4", countdown_file="resources/countdown_675_1080_reduced.mp4",
                  top_text_size=(1060, 400), top_text_pos=(10, 30), bot_text_size=(1060, 400), bot_text_pos=(10, 1490),
                  frame_preview_size=(1014, 540), frame_preview_pos=(33, 500), frame_preview_timeout=2.0,
                  font="resources/tahoma_font.ttf", font_size=130,
                  output_image_background_filename="resources/pasek.png",
                  print_background_filename="resources/print_background.png", output_image_size=(620, 1748),
-                 print_image_size=(1240, 1748),
-                 small_img_size=(573, 343),
-                 small_img_1_pos=(22, 103), small_img_2_pos=(22, 533), small_img_3_pos=(22, 963),
-                 confirm_img_preview_size=(434, 1224), confirm_img_preview_pos=(323, 30),
-                 confirm_text_size=(1060, 600), confirm_text_pos=(10, 1280), confirm_text_font_size=100, max_prints=4,
-                 print_confirm_timeout=15, save_path="saved_images", show_sleep_time=True, test=False,
-                 default_how_many_prints=2):
+                 print_image_size=(1240, 1748), small_img_size=(573, 343), small_img_1_pos=(22, 103),
+                 small_img_2_pos=(22, 533), small_img_3_pos=(22, 963), confirm_img_preview_size=(434, 1224),
+                 confirm_img_preview_pos=(323, 30), confirm_text_size=(1060, 600), confirm_text_pos=(10, 1280),
+                 confirm_text_font_size=100, default_how_many_prints=2, max_prints=4, print_confirm_timeout=15,
+                 save_path="saved_images", show_sleep_time=True, disable_fullscreen=False, size_down_view=False):
 
         now = datetime.now()
 
@@ -390,16 +412,20 @@ class MainWindow:
 
         self.save_id = 0
 
-        self.reset()
-        self.test = test
-        if not self.test:
+        self.disable_fullscreen = disable_fullscreen
+        self.size_down_view = size_down_view
+
+        if not self.disable_fullscreen:
             _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
             cv2.moveWindow("window", 0, 0)
             cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
+        self.reset()
+
     def reset(self):
         self.current_state = States.HOME
         self.how_many_prints = self.default_how_many_prints
+        self.update_print_screen = False
 
         self.photo_main_screen = None
 
@@ -411,6 +437,9 @@ class MainWindow:
         self.print_image = None
 
         self.save_id += 1
+
+        self.current_texts_bot_id.clear()
+        self.current_texts_top_id.clear()
 
         while len(self.current_texts_bot_id) < 4:
             text_id = random.randint(0, len(self.bot_texts) - 1)
@@ -533,8 +562,8 @@ class MainWindow:
                 frame[:40, :40] = empty
                 cv2.putText(frame, str(sleep_millis), (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, 2)
 
-            if self.test:
-                frame = cv2.resize(frame, (540, 960))
+            if self.size_down_view:
+                frame = cv2.resize(frame, (int(self.width / 2), int(self.height / 2)))
             cv2.imshow("window", frame)
 
             sleep_millis = rate.get_remaining_time_millis_cv2()
@@ -731,7 +760,6 @@ class MainWindow:
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser(description='Fotobudka',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-c', '--config', help='json config file path', default='default_config.json', type=str)
@@ -741,23 +769,19 @@ if __name__ == "__main__":
     data = json.load(f)
     f.close()
 
-    printer_control = PrinterControl(data["main_window"]["no_printer"], 19)
+    printer_control = PrinterControl(wait_for_print=data["printer"]["wait_for_print"],
+                                     disable_printer=data["printer"]["disable_printer"])
 
-    if not data["main_window"]["test"]:
-        from picamera2 import Picamera2
-        import RPi.GPIO as GPIO
+    flash_control = FlashControl(gpio_pin=data["flash"]["gpio_pin"], disable_flash=data["flash"]["disable_flash"])
 
-        flash_control = FlashControl(gpio_pin=data["flash"]["gpio_pin"])
-
-        camera_control = CameraControl(flash_control, frame_rate=data["camera"]["frame_rate"],
-                                       exposure_time=data["camera"]["exposure_time"],
-                                       analogue_gain=data["camera"]["analogue_gain"],
-                                       size=data["camera"]["size"],
-                                       img_format=data["camera"]["img_format"],
-                                       print_fps=data["camera"]["print_fps"],
-                                       show_preview=data["camera"]["show_preview"])
-    else:
-        camera_control = CameraControlSim(None, show_preview=data["camera"]["show_preview"], print_fps=data["camera"]["print_fps"])
+    camera_control = CameraControl(flash_control, frame_rate=data["camera"]["frame_rate"],
+                                   exposure_time=data["camera"]["exposure_time"],
+                                   analogue_gain=data["camera"]["analogue_gain"],
+                                   size=data["camera"]["size"],
+                                   img_format=data["camera"]["img_format"],
+                                   print_fps=data["camera"]["print_fps"],
+                                   show_preview=data["camera"]["show_preview"],
+                                   disable_camera=data["camera"]["disable_camera"])
 
     main_window = MainWindow(camera_control, printer_control,
                              size=data["main_window"]["size"],
@@ -786,17 +810,17 @@ if __name__ == "__main__":
                              confirm_text_size=data["main_window"]["confirm_text_size"],
                              confirm_text_pos=data["main_window"]["confirm_text_pos"],
                              confirm_text_font_size=data["main_window"]["confirm_text_font_size"],
-                             max_prints=data["main_window"]["max_prints"],
+                             default_how_many_prints=data["printer"]["default_how_many_prints"],
+                             max_prints=data["printer"]["max_prints"],
                              print_confirm_timeout=data["main_window"]["print_confirm_timeout"],
                              save_path=data["main_window"]["save_path"],
-                             default_how_many_prints=data["main_window"]["default_how_many_prints"],
                              show_sleep_time=data["main_window"]["show_sleep_time"],
-                             test=data["main_window"]["test"])
+                             disable_fullscreen=data["main_window"]["disable_fullscreen"],
+                             size_down_view=data["main_window"]["size_down_view"])
     main_window.run()
 
-    if not data["main_window"]["test"]:
-        flash_control.close()
-
+    flash_control.close()
     printer_control.close()
     camera_control.close()
+
     cv2.destroyAllWindows()

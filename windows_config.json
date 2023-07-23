@@ -10,18 +10,18 @@
         "img_format": "RGB888",
         "print_fps": false,
         "show_preview": false,
-        "disable_camera": false
+        "disable_camera": true
 
     },
     "flash": {
         "gpio_pin": 22,
-        "disable_flash": false
+        "disable_flash": true
     },
     "printer": {
         "default_how_many_prints": 2,
         "max_prints": 4,
         "wait_for_print": 19.0,
-        "disable_printer": false
+        "disable_printer": true
     },
     "main_window": {
         "size": [1080, 1920],
@@ -52,8 +52,8 @@
         "confirm_text_pos": [10, 1280],
         "confirm_img_preview_size": [434, 1224],
         "confirm_img_preview_pos": [323, 30],
-        "show_sleep_time": false,
-        "disable_fullscreen": false,
-        "size_down_view": false
+        "show_sleep_time": true,
+        "disable_fullscreen": true,
+        "size_down_view": true
     }
 }
