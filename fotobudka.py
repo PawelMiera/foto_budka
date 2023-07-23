@@ -1,6 +1,5 @@
 import cv2
-# from picamera2 import Picamera2
-# import RPi.GPIO as GPIO
+
 import threading
 import time
 from enum import IntEnum
@@ -616,14 +615,22 @@ class MainWindow:
 
 
 if __name__ == "__main__":
-    camera_control = CameraControlSim(None)
+    test = False
+    if not test:
+        from picamera2 import Picamera2
+        import RPi.GPIO as GPIO
+
+        flash_control = FlashControl()
+
+        camera_control = CameraControl(flash_control)
+    else:
+        camera_control = CameraControlSim(None)
 
     main_window = MainWindow(camera_control)
     main_window.run()
-    # flash_control = FlashControl()
-    #
-    # camera_control = CameraControl(flash_control)
 
-    # flash_control.close()
+    if not test:
+        flash_control.close()
+
     camera_control.close()
     cv2.destroyAllWindows()
