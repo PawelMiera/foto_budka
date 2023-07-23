@@ -46,6 +46,7 @@
         "confirm_img_preview_size": [434, 1224],
         "confirm_img_preview_pos": [323, 30],
         "show_sleep_time": true,
-        "test": false
+        "test": false,
+        "no_printer": true
     }
 }

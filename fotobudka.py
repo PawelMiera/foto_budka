@@ -741,7 +741,7 @@ if __name__ == "__main__":
     data = json.load(f)
     f.close()
 
-    printer_control = PrinterControl(data["main_window"]["test"], 19)
+    printer_control = PrinterControl(data["main_window"]["no_printer"], 19)
 
     if not data["main_window"]["test"]:
         from picamera2 import Picamera2
