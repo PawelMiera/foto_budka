@@ -1,0 +1,59 @@
+{
+    "camera": {
+        "size": [
+            2028,
+            1080
+        ],
+        "frame_rate": 5,
+        "exposure_time": 300000,
+        "analogue_gain": 8.0,
+        "img_format": "RGB888",
+        "print_fps": false,
+        "show_preview": false,
+        "disable_camera": false
+
+    },
+    "flash": {
+        "gpio_pin": 22,
+        "disable_flash": false
+    },
+    "printer": {
+        "default_how_many_prints": 2,
+        "max_prints": 4,
+        "wait_for_print": 19.0,
+        "disable_printer": false
+    },
+    "main_window": {
+        "size": [1080, 1920],
+        "fps": 30,
+        "home_file": "resources/fotobudka_home.mp4",
+        "countdown_file": "resources/odliczanie.mp4",
+        "output_image_background_filename": "resources/pasek.png",
+        "print_background_filename": "resources/print_background.png",
+        "save_path": "saved_images",
+        "print_confirm_timeout": 15,
+        "output_image_size": [620, 1748],
+        "print_image_size": [1240, 1748],
+        "small_img_size": [573, 343],
+        "small_img_1_pos": [22, 103],
+        "small_img_2_pos": [22, 533],
+        "small_img_3_pos": [22, 963],
+        "font_size": 130,
+        "font": "resources/tahoma_font.ttf",
+        "top_text_size": [1060, 400],
+        "top_text_pos": [10, 30],
+        "bot_text_size": [1060, 400],
+        "bot_text_pos": [10, 1490],
+        "frame_preview_size": [1014, 540],
+        "frame_preview_pos": [33, 500],
+        "frame_preview_timeout": 8.0,
+        "confirm_text_font_size": 100,
+        "confirm_text_size": [1060, 600],
+        "confirm_text_pos": [10, 1280],
+        "confirm_img_preview_size": [434, 1224],
+        "confirm_img_preview_pos": [323, 30],
+        "show_sleep_time": false,
+        "disable_fullscreen": false,
+        "size_down_view": false
+    }
+}
