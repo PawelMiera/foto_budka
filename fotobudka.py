@@ -55,11 +55,11 @@ class FlashControl:
 
             GPIO.output(self.gpio_pin, GPIO.HIGH)
 
-            for _ in range(2):
+            for _ in range(4):
                 GPIO.output(self.gpio_pin, GPIO.LOW)
                 time.sleep(0.1)
                 GPIO.output(self.gpio_pin, GPIO.HIGH)
-                time.sleep(0.2)
+                time.sleep(0.5)
 
         thread = threading.Thread(target=self.run)
         thread.start()
@@ -74,14 +74,13 @@ class FlashControl:
 
         while not self.end.is_set():
             if self.flash_event.is_set():
+                self.flash_event.clear()
                 if not self.disable_flash:
                     print("Flashing", self.flash_event.is_set())
                     time.sleep(self.sleep_before_flash)
                     GPIO.output(self.gpio_pin, GPIO.LOW)
                     time.sleep(0.1)
                     GPIO.output(self.gpio_pin, GPIO.HIGH)
-                self.flash_event.clear()
-                print(self.flash_event.is_set())
 
             rate.sleep()
         if not self.disable_flash:
