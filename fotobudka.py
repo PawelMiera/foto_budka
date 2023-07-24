@@ -178,9 +178,9 @@ class PrinterControl:
                     cups.setUser('kidier')
                 except Exception:
                     traceback.print_exc()
-                    _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
-                    cv2.moveWindow("window", 0, 0)
-                    cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+                    # _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
+                    # cv2.moveWindow("window", 0, 0)
+                    # cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
                     frame = np.zeros((1080, 1920, 3), np.uint8)
                     cv2.putText(frame, "Waiting", (400, 100), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 4, 16)
                     cv2.putText(frame, "for", (500, 200), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 4, 16)
@@ -191,7 +191,8 @@ class PrinterControl:
                     cv2.putText(frame, dots_str, (500, 400), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 4, 16)
 
                     cv2.imshow("window", frame)
-                    cv2.waitKey(400)
+                    if cv2.waitKey(400) == ord("q"):
+                        exit(0)
                     exception_count += 1
 
                 else:
