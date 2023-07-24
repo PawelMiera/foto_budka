@@ -22,7 +22,7 @@
         "default_how_many_prints": 2,
         "max_prints": 4,
         "wait_for_print": 19.0,
-        "disable_printer": false
+        "disable_printer": true
     },
     "main_window": {
         "size": [1080, 1920],
