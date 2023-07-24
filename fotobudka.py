@@ -95,10 +95,12 @@ class FlashControl:
 
 class CameraControl:
     def __init__(self, flash_control: FlashControl, frame_rate=5, exposure_time=300000, analogue_gain=8.0,
-                 size=(2028, 1080), img_format="RGB888", print_fps=False, show_preview=False, disable_camera=False):
+                 size=(2028, 1080), img_format="RGB888", horizontal_flip=True, print_fps=False, show_preview=False,
+                 disable_camera=False):
         self.print_fps = print_fps
         self.show_preview = show_preview
         self.disable_camera = disable_camera
+        self.horizontal_flip = horizontal_flip
         self.size = size
 
         self.end = threading.Event()
@@ -132,6 +134,8 @@ class CameraControl:
                 if not self.disable_camera:
                     self.flash_control.start_flash()
                     self.last_frame = self.picam2.capture_array()
+                    if self.horizontal_flip:
+                        self.last_frame = cv2.flip(self.last_frame, 0)
                 else:
                     self.flash_control.start_flash()
                     self.last_frame = np.ones((self.size[1], self.size[0], 3), np.uint8) * 255
@@ -140,6 +144,8 @@ class CameraControl:
             else:
                 if not self.disable_camera:
                     frame = self.picam2.capture_array()
+                    if self.horizontal_flip:
+                        frame = cv2.flip(frame, 0)
                     if self.show_preview:
                         cv2.imshow("preview", frame)
                         cv2.waitKey(1)

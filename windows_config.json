@@ -8,6 +8,7 @@
         "exposure_time": 300000,
         "analogue_gain": 8.0,
         "img_format": "RGB888",
+        "horizontal_flip": true,
         "print_fps": false,
         "show_preview": false,
         "disable_camera": true
