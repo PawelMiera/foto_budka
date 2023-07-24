@@ -75,6 +75,7 @@ class FlashControl:
         while not self.end.is_set():
             if self.flash_event.is_set():
                 if not self.disable_flash:
+                    print("Flashing", self.flash_event.is_set())
                     time.sleep(self.sleep_before_flash)
                     GPIO.output(self.gpio_pin, GPIO.LOW)
                     time.sleep(0.1)
