@@ -48,8 +48,6 @@ class FlashControl:
         self.disable_flash = disable_flash
         if not self.disable_flash:
 
-            import RPi.GPIO as GPIO
-
             self.gpio_pin = gpio_pin
             GPIO.setmode(GPIO.BCM)
 
@@ -735,6 +733,9 @@ if __name__ == "__main__":
     f = open(args.config)
     data = json.load(f)
     f.close()
+
+    if not data["flash"]["disable_flash"]:
+        import RPi.GPIO as GPIO
 
     printer_control = PrinterControl(wait_for_print=data["printer"]["wait_for_print"],
                                      disable_printer=data["printer"]["disable_printer"])
