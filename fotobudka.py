@@ -14,8 +14,8 @@ import json
 import argparse
 import traceback
 
-import RPi.GPIO as GPIO
-from picamera2 import Picamera2
+# import RPi.GPIO as GPIO
+# from picamera2 import Picamera2
 
 
 class Rate:
@@ -79,8 +79,9 @@ class FlashControl:
         while not self.end.is_set():
             if self.flash_event.is_set():
                 self.flash_event.clear()
+                print("Flashing")
+
                 if not self.disable_flash:
-                    print("Flashing", self.flash_event.is_set())
                     time.sleep(self.sleep_before_flash)
                     GPIO.output(self.gpio_pin, GPIO.LOW)
                     time.sleep(0.1)
@@ -128,10 +129,13 @@ class CameraControl:
 
         while not self.end.is_set():
             if self.photo_event.is_set():
+                self.photo_event.clear()
+                print("Making photo")
                 if not self.disable_camera:
                     self.flash_control.start_flash()
                     self.last_frame = self.picam2.capture_array()
                 else:
+                    self.flash_control.start_flash()
                     self.last_frame = np.ones((self.size[1], self.size[0], 3), np.uint8) * 255
 
                 self.photo_done_event.set()
