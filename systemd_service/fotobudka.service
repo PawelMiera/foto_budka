@@ -8,6 +8,8 @@ Type=oneshot
 RemainAfterExit=yes
 ExecStart=python3 /home/pi/foto_budka/fotobudka.py -c /home/pi/foto_budka/raspi_global_paths.json
 TimeoutStartSec=0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+Environment=DISPLAY=:0.0
 
 [Install]
 WantedBy=multi-user.target
