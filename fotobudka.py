@@ -14,6 +14,10 @@ import json
 import argparse
 import traceback
 
+import RPi.GPIO as GPIO
+from picamera2 import Picamera2
+
+
 class Rate:
     def __init__(self, rate):
         self.rate_time = 1.0 / rate
@@ -105,7 +109,6 @@ class CameraControl:
         self.last_frame = None
 
         if not self.disable_camera:
-            from picamera2 import Picamera2
 
             self.picam2 = Picamera2()
             controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
@@ -734,9 +737,6 @@ if __name__ == "__main__":
     f = open(args.config)
     data = json.load(f)
     f.close()
-
-    if not data["flash"]["disable_flash"]:
-        import RPi.GPIO as GPIO
 
     printer_control = PrinterControl(wait_for_print=data["printer"]["wait_for_print"],
                                      disable_printer=data["printer"]["disable_printer"])
