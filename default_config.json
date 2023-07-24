@@ -51,7 +51,10 @@
         "confirm_text_size": [1060, 600],
         "confirm_text_pos": [10, 1280],
         "confirm_img_preview_size": [434, 1224],
-        "confirm_img_preview_pos": [323, 30],
+        "confirm_img_preview_pos": [323, 10],
+        "increase_preview_brightness": true,
+        "preview_contrast_value": 3,
+        "preview_brightness_value": 10,
         "show_sleep_time": false,
         "disable_fullscreen": false,
         "size_down_view": false

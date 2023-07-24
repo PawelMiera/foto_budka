@@ -300,7 +300,8 @@ class MainWindow:
                  small_img_2_pos=(22, 533), small_img_3_pos=(22, 963), confirm_img_preview_size=(434, 1224),
                  confirm_img_preview_pos=(323, 30), confirm_text_size=(1060, 600), confirm_text_pos=(10, 1280),
                  confirm_text_font_size=100, default_how_many_prints=2, max_prints=4, print_confirm_timeout=15,
-                 save_path="saved_images", show_sleep_time=True, disable_fullscreen=False, size_down_view=False):
+                 save_path="saved_images", increase_preview_brightness=True, preview_contrast_value=3,
+                 preview_brightness_value=10, show_sleep_time=True, disable_fullscreen=False, size_down_view=False):
 
         now = datetime.now()
 
@@ -388,6 +389,10 @@ class MainWindow:
         self.update_print_screen = False
 
         self.save_id = 0
+
+        self.increase_preview_brightness = increase_preview_brightness
+        self.preview_contrast_value = preview_contrast_value
+        self.preview_brightness_value = preview_brightness_value
 
         self.disable_fullscreen = disable_fullscreen
         self.size_down_view = size_down_view
@@ -625,6 +630,10 @@ class MainWindow:
         y0 = self.confirm_image_preview_pos[1]
         y1 = self.confirm_image_preview_size[1] + self.confirm_image_preview_pos[1]
         preview = cv2.resize(preview, self.confirm_image_preview_size)
+
+        if self.increase_preview_brightness:
+            preview = self.change_brightness(preview, self.preview_contrast_value, self.preview_brightness_value)
+
         frame[y0:y1, x0:x1] = preview
 
         return frame
@@ -657,6 +666,10 @@ class MainWindow:
         y0 = self.frame_preview_pos[1]
         y1 = self.frame_preview_size[1] + self.frame_preview_pos[1]
         preview = cv2.resize(preview, self.frame_preview_size)
+
+        if self.increase_preview_brightness:
+            preview = self.change_brightness(preview, self.preview_contrast_value, self.preview_brightness_value)
+
         frame[y0:y1, x0:x1] = preview
 
         return frame
@@ -679,6 +692,9 @@ class MainWindow:
                 self.printer.add(self.print_image_path)
                 self.how_many_prints += 1
                 self.update_print_screen = True
+
+    def change_brightness(self, img, alpha, beta):
+        return cv2.addWeighted(img, alpha, np.zeros(img.shape, img.dtype), 0, beta)
 
     def handle_home(self):
         if self.home_resource_size == 1:
@@ -797,6 +813,9 @@ if __name__ == "__main__":
                              max_prints=data["printer"]["max_prints"],
                              print_confirm_timeout=data["main_window"]["print_confirm_timeout"],
                              save_path=data["main_window"]["save_path"],
+                             increase_preview_brightness=data["main_window"]["increase_preview_brightness"],
+                             preview_contrast_value=data["main_window"]["preview_contrast_value"],
+                             preview_brightness_value=data["main_window"]["preview_brightness_value"],
                              show_sleep_time=data["main_window"]["show_sleep_time"],
                              disable_fullscreen=data["main_window"]["disable_fullscreen"],
                              size_down_view=data["main_window"]["size_down_view"])
