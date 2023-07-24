@@ -761,6 +761,7 @@ if __name__ == "__main__":
                                    analogue_gain=data["camera"]["analogue_gain"],
                                    size=data["camera"]["size"],
                                    img_format=data["camera"]["img_format"],
+                                   horizontal_flip=data["camera"]["horizontal_flip"],
                                    print_fps=data["camera"]["print_fps"],
                                    show_preview=data["camera"]["show_preview"],
                                    disable_camera=data["camera"]["disable_camera"])
