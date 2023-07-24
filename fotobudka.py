@@ -12,7 +12,7 @@ import os
 from datetime import datetime
 import json
 import argparse
-
+import traceback
 
 class Rate:
     def __init__(self, rate):
@@ -41,9 +41,10 @@ class Rate:
 
 
 class FlashControl:
-    def __init__(self, gpio_pin=22, disable_flash=False):
+    def __init__(self, gpio_pin=22, sleep_before_flash=0.01, disable_flash=False):
         self.flash_event = threading.Event()
         self.end = threading.Event()
+        self.sleep_before_flash = sleep_before_flash
         self.disable_flash = disable_flash
         if not self.disable_flash:
 
@@ -76,6 +77,7 @@ class FlashControl:
         while not self.end.is_set():
             if self.flash_event.is_set():
                 if not self.disable_flash:
+                    time.sleep(self.sleep_before_flash)
                     GPIO.output(self.gpio_pin, GPIO.LOW)
                     time.sleep(0.1)
                     GPIO.output(self.gpio_pin, GPIO.HIGH)
@@ -160,77 +162,41 @@ class CameraControl:
     def close(self):
         self.end.set()
 
-
-# class CameraControlSim:
-#     def __init__(self, flash_control, frame_rate=5, exposure_time=300000, analogue_gain=8.0,
-#                  size=(2028, 1080), img_format="RGB888", print_fps=False, show_preview=False):
-#         self.print_fps = print_fps
-#         self.show_preview = show_preview
-#
-#         self.end = threading.Event()
-#         self.photo_event = threading.Event()
-#         self.photo_done_event = threading.Event()
-#         # self.flash_control = flash_control
-#         self.last_frame = None
-#
-#         self.cap = cv2.VideoCapture(0)
-#
-#         thread = threading.Thread(target=self.run)
-#         thread.start()
-#
-#         #
-#         # self.picam2 = Picamera2()
-#         # controls = {"FrameRate": frame_rate, "ExposureTime": exposure_time, "AnalogueGain": analogue_gain}
-#         # preview_config = self.picam2.create_preview_configuration(main={"size": size, "format": format},
-#         #                                                           controls=controls)
-#         # self.picam2.configure(preview_config)
-#         # self.picam2.start()
-#
-#     def run(self):
-#         fps = 0
-#         last_print_time = time.time()
-#
-#         while not self.end.is_set():
-#             if self.photo_event.is_set():
-#                 # self.flash_control.start_flash()
-#                 ret, self.last_frame = self.cap.read()
-#                 self.photo_done_event.set()
-#             else:
-#                 _, frame= self.cap.read()
-#                 if self.show_preview:
-#                     cv2.imshow("preview", frame)
-#                     cv2.waitKey(1)
-#
-#             if self.print_fps:
-#                 fps += 1
-#                 if time.time() - last_print_time > 1:
-#                     last_print_time = time.time()
-#                     print(fps)
-#                     fps = 0
-#         self.cap.release()
-#
-#     def start_photo(self):
-#         self.photo_event.set()
-#         self.photo_done_event.clear()
-#
-#     def is_done(self):
-#         return self.photo_done_event.is_set()
-#
-#     def get_photo(self):
-#         return self.last_frame.copy()
-#
-#     def close(self):
-#         self.end.set()
-
-
 class PrinterControl:
     def __init__(self, wait_for_print, disable_printer=False):
         self.disable_printer = disable_printer
+
         if not self.disable_printer:
-            self.conn = cups.Connection()
-            printers = self.conn.getPrinters()
-            self.default_printer = list(printers.keys())[0]
-            cups.setUser('kidier')
+            exception_count = 0
+            while True:
+                try:
+                    if exception_count > 100:
+                        exit(0)
+                    self.conn = cups.Connection()
+                    printers = self.conn.getPrinters()
+                    self.default_printer = list(printers.keys())[0]
+                    cups.setUser('kidier')
+                except Exception:
+                    traceback.print_exc()
+                    _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
+                    cv2.moveWindow("window", 0, 0)
+                    cv2.setWindowProperty("window", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+                    frame = np.zeros((1080, 1920, 3), np.uint8)
+                    cv2.putText(frame, "Waiting", (400, 100), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 4, 16)
+                    cv2.putText(frame, "for", (500, 200), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 4, 16)
+                    cv2.putText(frame, "printer", (400, 300), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 4, 16)
+                    dots_str = ""
+                    for i in range(exception_count % 4):
+                        dots_str += "."
+                    cv2.putText(frame, dots_str, (500, 400), cv2.FONT_HERSHEY_SIMPLEX, 3, (255, 255, 255), 4, 16)
+
+                    cv2.imshow("window", frame)
+                    cv2.waitKey(400)
+                    exception_count += 1
+
+                else:
+                    cv2.destroyAllWindows()
+                    break
 
         self.end = threading.Event()
         self.print_done_event = threading.Event()
@@ -772,7 +738,9 @@ if __name__ == "__main__":
     printer_control = PrinterControl(wait_for_print=data["printer"]["wait_for_print"],
                                      disable_printer=data["printer"]["disable_printer"])
 
-    flash_control = FlashControl(gpio_pin=data["flash"]["gpio_pin"], disable_flash=data["flash"]["disable_flash"])
+    flash_control = FlashControl(gpio_pin=data["flash"]["gpio_pin"],
+                                 sleep_before_flash=data["flash"]["sleep_before_flash"],
+                                 disable_flash=data["flash"]["disable_flash"])
 
     camera_control = CameraControl(flash_control, frame_rate=data["camera"]["frame_rate"],
                                    exposure_time=data["camera"]["exposure_time"],

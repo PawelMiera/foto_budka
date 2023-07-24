@@ -15,6 +15,7 @@
     },
     "flash": {
         "gpio_pin": 22,
+        "sleep_before_flash": 0.01,
         "disable_flash": false
     },
     "printer": {
