@@ -81,6 +81,7 @@ class FlashControl:
                     time.sleep(0.1)
                     GPIO.output(self.gpio_pin, GPIO.HIGH)
                 self.flash_event.clear()
+                print(self.flash_event.is_set())
 
             rate.sleep()
         if not self.disable_flash:
