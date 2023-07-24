@@ -9,7 +9,7 @@
         "analogue_gain": 8.0,
         "img_format": "RGB888",
         "horizontal_flip": true,
-        "print_fps": true,
+        "print_fps": false,
         "show_preview": false,
         "disable_camera": false
 
@@ -23,7 +23,7 @@
         "default_how_many_prints": 2,
         "max_prints": 4,
         "wait_for_print": 19.0,
-        "disable_printer": true
+        "disable_printer": false
     },
     "main_window": {
         "size": [1080, 1920],
@@ -57,7 +57,7 @@
         "increase_preview_brightness": true,
         "preview_contrast_value": 3,
         "preview_brightness_value": 10,
-        "show_sleep_time": true,
+        "show_sleep_time": false,
         "disable_fullscreen": false,
         "size_down_view": false
     }
