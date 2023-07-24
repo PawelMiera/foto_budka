@@ -463,7 +463,7 @@ class MainWindow:
                     self.photo_main_screen = self.generate_photo_main_screen(
                         self.top_texts[self.current_texts_top_id[1]],
                         self.bot_texts[self.current_texts_bot_id[1]]
-                        + "\nZdjęcie nr 2", self.frame_1)
+                        + "\nZdjęcie nr 2", self.frame_1.copy())
                 frame = self.photo_main_screen
 
                 if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
@@ -474,7 +474,7 @@ class MainWindow:
                     self.photo_main_screen = self.generate_photo_main_screen(
                         self.top_texts[self.current_texts_top_id[2]],
                         self.bot_texts[self.current_texts_bot_id[2]]
-                        + "\nZdjęcie nr 3", self.frame_2)
+                        + "\nZdjęcie nr 3", self.frame_2.copy())
                 frame = self.photo_main_screen
 
                 if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
@@ -484,7 +484,7 @@ class MainWindow:
                 if self.photo_main_screen is None:
                     self.photo_main_screen = self.generate_photo_main_screen(
                         self.top_texts[self.current_texts_top_id[3]],
-                        None, self.frame_3)
+                        None, self.frame_3.copy())
                 frame = self.photo_main_screen
                 if time.time() - self.frame_preview_time_start > self.frame_preview_timeout / 2:
                     self.generate_output_image()
@@ -521,7 +521,7 @@ class MainWindow:
                 if self.photo_main_screen is None:
                     self.photo_main_screen = self.generate_photo_confirm_screen \
                         ("Wciśnij przycisk,\naby wydrukować!\nPoczekaj " + str(self.print_confirm_timeout) +
-                         " sekund,\naby anulować!", self.output_image)
+                         " sekund,\naby anulować!", self.output_image.copy())
 
                 frame = self.photo_main_screen
 
@@ -534,7 +534,7 @@ class MainWindow:
                            str(self.how_many_prints - self.printer.get_print_size()) + " z " + \
                            str(self.how_many_prints) + "..."
 
-                    self.photo_main_screen = self.generate_photo_confirm_screen(text, self.output_image)
+                    self.photo_main_screen = self.generate_photo_confirm_screen(text, self.output_image.copy())
                     self.update_print_screen = False
 
                 frame = self.photo_main_screen
