@@ -5,6 +5,7 @@ Wants=network-online.target systemd-networkd-wait-online.service
 
 [Service]
 Type=oneshot
+User=pi
 RemainAfterExit=yes
 ExecStart=python3 /home/pi/foto_budka/fotobudka.py -c /home/pi/foto_budka/raspi_global_paths.json
 TimeoutStartSec=0
