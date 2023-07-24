@@ -7,12 +7,6 @@ echo Coping files!
 
 cp fotobudka.service /etc/systemd/system/
 
-cp fotobudka.sh /usr/local/bin/
-
-echo Setting permissions!
-
-chmod a+x /usr/local/bin/fotobudka.sh
-
 echo Reloading systemd deamon!
 
 systemctl daemon-reload
