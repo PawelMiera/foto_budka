@@ -1,0 +1,13 @@
+[Unit]
+Description=FotobudkaService
+After=network-online.target
+Wants=network-online.target systemd-networkd-wait-online.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/start_drone_network_setup_once_per_boot.sh
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
