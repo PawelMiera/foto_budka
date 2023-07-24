@@ -57,7 +57,7 @@ class FlashControl:
 
             GPIO.output(self.gpio_pin, GPIO.HIGH)
 
-            for _ in range(4):
+            for _ in range(3):
                 GPIO.output(self.gpio_pin, GPIO.LOW)
                 time.sleep(0.1)
                 GPIO.output(self.gpio_pin, GPIO.HIGH)
@@ -397,6 +397,8 @@ class MainWindow:
         self.disable_fullscreen = disable_fullscreen
         self.size_down_view = size_down_view
 
+        self.last_use_time = time.time()
+
         if not self.disable_fullscreen:
             _ = cv2.namedWindow("window", cv2.WND_PROP_FULLSCREEN)
             cv2.moveWindow("window", 0, 0)
@@ -410,6 +412,8 @@ class MainWindow:
         self.update_print_screen = False
 
         self.photo_main_screen = None
+
+        self.last_use_time = time.time()
 
         self.frame_1 = None
         self.frame_2 = None
@@ -678,6 +682,11 @@ class MainWindow:
         print("Button click")
 
         if self.current_state == States.HOME:
+            if time.time() - self.last_use_time > 600:
+                self.camera_control.flash_control.start_flash()
+                time.sleep(0.5)
+                self.camera_control.flash_control.start_flash()
+
             self.current_state = States.PREPARE
             self.frame_preview_time_start = time.time()
         elif self.current_state == States.CONFIRM_PRINT:
