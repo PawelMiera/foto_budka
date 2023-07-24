@@ -764,7 +764,7 @@ class MainWindow:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fotobudka',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-c', '--config', help='json config file path', default='default_config.json', type=str)
+    parser.add_argument('-c', '--config', help='json config file path', default='raspi_global_paths.json', type=str)
     args = parser.parse_args()
 
     f = open(args.config)
