@@ -151,7 +151,8 @@ class CameraControl:
                         if self.horizontal_flip:
                             frame = cv2.flip(frame, 1)
                         if self.show_preview:
-                            cv2.imshow("preview", frame)
+                            preview = cv2.resize(frame.copy(), (640, 480))
+                            cv2.imshow("preview", preview)
                             cv2.waitKey(1)
                     else:
                         time.sleep(0.2)
