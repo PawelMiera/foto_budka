@@ -134,7 +134,6 @@ class CameraControl:
             try:
                 if self.photo_event.is_set():
                     self.photo_event.clear()
-                    print("Making photo")
                     if not self.disable_camera:
                         self.flash_control.start_flash()
                         self.last_frame = self.picam2.capture_array()
@@ -147,7 +146,7 @@ class CameraControl:
 
                         frame = cv2.merge([zeros, zeros, ones])
                         self.last_frame = frame
-
+                    print("Made photo of size:", self.last_frame.shape)
                     self.photo_done_event.set()
                 else:
                     if not self.disable_camera:
@@ -315,7 +314,8 @@ class MainWindow:
                  font="resources/tahoma_font.ttf", font_size=130,
                  output_image_background_filename="resources/pasek.png",
                  print_background_filename="resources/print_background.png", output_image_size=(620, 1748),
-                 print_image_size=(1240, 1748), small_img_size=(573, 343), small_img_1_pos=(22, 103),
+                 print_image_size=(1240, 1748), cropped_img_start=(0, 0), cropped_img_end=(1920, 1080),
+                 small_img_size=(573, 343), small_img_1_pos=(22, 103),
                  small_img_2_pos=(22, 533), small_img_3_pos=(22, 963), confirm_img_preview_size=(434, 1224),
                  confirm_img_preview_pos=(323, 30), confirm_text_size=(1060, 600), confirm_text_pos=(10, 1280),
                  confirm_text_font_size=100, default_how_many_prints=2, max_prints=4, print_confirm_timeout=15,
@@ -389,6 +389,9 @@ class MainWindow:
         self.print_image_size = print_image_size
         self.print_image = None
         self.print_image_path = ""
+
+        self.cropped_img_start = cropped_img_start
+        self.cropped_img_end = cropped_img_end
 
         self.small_img_1_pos = small_img_1_pos
         self.small_img_2_pos = small_img_2_pos
@@ -597,6 +600,14 @@ class MainWindow:
     def generate_output_image(self):
         self.output_image = self.output_image_background.copy()
 
+        crop_s_x = self.cropped_img_start[0]
+        crop_e_x = self.cropped_img_end[0]
+        crop_s_y = self.cropped_img_start[1]
+        crop_e_y = self.cropped_img_end[1]
+        cropped_frame_1 = self.frame_1[crop_s_y:crop_e_y, crop_s_x:crop_e_x]
+        cropped_frame_2 = self.frame_2[crop_s_y:crop_e_y, crop_s_x:crop_e_x]
+        cropped_frame_3 = self.frame_3[crop_s_y:crop_e_y, crop_s_x:crop_e_x]
+
         w = self.small_img_size[0]
         h = self.small_img_size[1]
 
@@ -607,9 +618,9 @@ class MainWindow:
         y2 = self.small_img_2_pos[1]
         y3 = self.small_img_3_pos[1]
 
-        f1 = cv2.resize(self.frame_1, (w, h))
-        f2 = cv2.resize(self.frame_2, (w, h))
-        f3 = cv2.resize(self.frame_3, (w, h))
+        f1 = cv2.resize(cropped_frame_1, (w, h))
+        f2 = cv2.resize(cropped_frame_2, (w, h))
+        f3 = cv2.resize(cropped_frame_3, (w, h))
 
         self.output_image[y1:y1 + h, x1:x1 + w] = f1
         self.output_image[y2:y2 + h, x2:x2 + w] = f2
@@ -834,6 +845,8 @@ if __name__ == "__main__":
                              print_background_filename=data["main_window"]["print_background_filename"],
                              output_image_size=data["main_window"]["output_image_size"],
                              print_image_size=data["main_window"]["print_image_size"],
+                             cropped_img_start=data["main_window"]["cropped_img_start"],
+                             cropped_img_end=data["main_window"]["cropped_img_end"],
                              small_img_size=data["main_window"]["small_img_size"],
                              small_img_1_pos=data["main_window"]["small_img_1_pos"],
                              small_img_2_pos=data["main_window"]["small_img_2_pos"],

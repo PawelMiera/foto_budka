@@ -36,6 +36,8 @@
         "print_confirm_timeout": 15,
         "output_image_size": [620, 1748],
         "print_image_size": [1240, 1748],
+        "cropped_img_start": [70, 0],
+        "cropped_img_end": [1850, 1080],
         "small_img_size": [543, 326],
         "small_img_1_pos": [39, 116],
         "small_img_2_pos": [39, 522],
