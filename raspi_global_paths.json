@@ -16,13 +16,13 @@
     },
     "flash": {
         "gpio_pin": 22,
-        "sleep_before_flash": 0.01,
+        "sleep_before_flash": 0.02,
         "disable_flash": false
     },
     "printer": {
         "default_how_many_prints": 2,
-        "max_prints": 4,
-        "wait_for_print": 19.0,
+        "max_prints": 5,
+        "wait_for_print": 50.0,
         "disable_printer": false
     },
     "main_window": {

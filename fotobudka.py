@@ -15,7 +15,6 @@ import argparse
 import traceback
 
 
-
 class Rate:
     def __init__(self, rate):
         self.rate_time = 1.0 / rate
@@ -75,17 +74,21 @@ class FlashControl:
         rate = Rate(100)
 
         while not self.end.is_set():
-            if self.flash_event.is_set():
-                self.flash_event.clear()
-                print("Flashing")
+            try:
+                if self.flash_event.is_set():
+                    self.flash_event.clear()
+                    print("Flashing")
 
-                if not self.disable_flash:
-                    time.sleep(self.sleep_before_flash)
-                    GPIO.output(self.gpio_pin, GPIO.LOW)
-                    time.sleep(0.1)
-                    GPIO.output(self.gpio_pin, GPIO.HIGH)
+                    if not self.disable_flash:
+                        time.sleep(self.sleep_before_flash)
+                        GPIO.output(self.gpio_pin, GPIO.LOW)
+                        time.sleep(0.1)
+                        GPIO.output(self.gpio_pin, GPIO.HIGH)
 
-            rate.sleep()
+                rate.sleep()
+            except Exception as e:
+                print("Flash exception occurred: ", str(e))
+                traceback.print_exc()
         if not self.disable_flash:
             GPIO.cleanup()  # cleanup all GPIO
 
@@ -128,36 +131,40 @@ class CameraControl:
         last_print_time = time.time()
 
         while not self.end.is_set():
-            if self.photo_event.is_set():
-                self.photo_event.clear()
-                print("Making photo")
-                if not self.disable_camera:
-                    self.flash_control.start_flash()
-                    self.last_frame = self.picam2.capture_array()
-                    if self.horizontal_flip:
-                        self.last_frame = cv2.flip(self.last_frame, 1)
-                else:
-                    self.flash_control.start_flash()
-                    self.last_frame = np.ones((self.size[1], self.size[0], 3), np.uint8) * 255
+            try:
+                if self.photo_event.is_set():
+                    self.photo_event.clear()
+                    print("Making photo")
+                    if not self.disable_camera:
+                        self.flash_control.start_flash()
+                        self.last_frame = self.picam2.capture_array()
+                        if self.horizontal_flip:
+                            self.last_frame = cv2.flip(self.last_frame, 1)
+                    else:
+                        self.flash_control.start_flash()
+                        self.last_frame = np.ones((self.size[1], self.size[0], 3), np.uint8) * 255
 
-                self.photo_done_event.set()
-            else:
-                if not self.disable_camera:
-                    frame = self.picam2.capture_array()
-                    if self.horizontal_flip:
-                        frame = cv2.flip(frame, 1)
-                    if self.show_preview:
-                        cv2.imshow("preview", frame)
-                        cv2.waitKey(1)
+                    self.photo_done_event.set()
                 else:
-                    time.sleep(0.2)
+                    if not self.disable_camera:
+                        frame = self.picam2.capture_array()
+                        if self.horizontal_flip:
+                            frame = cv2.flip(frame, 1)
+                        if self.show_preview:
+                            cv2.imshow("preview", frame)
+                            cv2.waitKey(1)
+                    else:
+                        time.sleep(0.2)
 
-            if self.print_fps:
-                fps += 1
-                if time.time() - last_print_time > 1:
-                    last_print_time = time.time()
-                    print("Camera FPS: ", fps)
-                    fps = 0
+                if self.print_fps:
+                    fps += 1
+                    if time.time() - last_print_time > 1:
+                        last_print_time = time.time()
+                        print("Camera FPS: ", fps)
+                        fps = 0
+            except Exception as e:
+                print("Camera exception occurred: ", str(e))
+                traceback.print_exc()
 
     def start_photo(self):
         self.photo_event.set()
@@ -172,6 +179,7 @@ class CameraControl:
     def close(self):
         self.end.set()
 
+
 class PrinterControl:
     def __init__(self, wait_for_print, disable_printer=False):
         self.disable_printer = disable_printer
@@ -185,6 +193,7 @@ class PrinterControl:
                     self.conn = cups.Connection()
                     printers = self.conn.getPrinters()
                     self.default_printer = list(printers.keys())[0]
+                    print("Found printer: ", self.default_printer)
                     cups.setUser('kidier')
                 except Exception:
                     traceback.print_exc()
@@ -224,19 +233,23 @@ class PrinterControl:
         rate = Rate(10)
 
         while not self.end.is_set():
-            if not self.print_queue.empty():
-                self.print_changed.set()
-                self.print_done_event.clear()
-                filename = self.print_queue.get()
-                if not self.disable_printer:
-                    self.conn.printFile(self.default_printer, filename, "boothy", {'fit-to-page': 'True'})
-                print("Print job successfully created: ", filename)
-                print("Sleeping for:", self.wait_for_print)
-                time.sleep(self.wait_for_print)
-            else:
-                self.print_done_event.set()
+            try:
+                if not self.print_queue.empty():
+                    self.print_changed.set()
+                    self.print_done_event.clear()
+                    filename = self.print_queue.get()
+                    if not self.disable_printer:
+                        self.conn.printFile(self.default_printer, filename, "boothy", {'fit-to-page': 'True'})
+                    print("Print job successfully created: ", filename)
+                    print("Sleeping for:", self.wait_for_print)
+                    time.sleep(self.wait_for_print)
+                else:
+                    self.print_done_event.set()
 
-            rate.sleep()
+                rate.sleep()
+            except Exception as e:
+                print("Printer exception occurred: ", str(e))
+                traceback.print_exc()
 
     def changed(self):
         val = self.print_changed.is_set()
@@ -289,9 +302,10 @@ def draw_centered_text(text, image, font):
 
 
 class MainWindow:
-    def __init__(self, camera_control: CameraControl, printer: PrinterControl, size=(1080, 1920), fps=30,
-                 home_file="resources/fotobudka_home.mp4", countdown_file="resources/countdown_675_1080_reduced.mp4",
-                 top_text_size=(1060, 400), top_text_pos=(10, 30), bot_text_size=(1060, 400), bot_text_pos=(10, 1490),
+    def __init__(self, camera_control: CameraControl, flash_control: FlashControl, printer: PrinterControl,
+                 size=(1080, 1920), fps=30, home_file="resources/fotobudka_home.mp4",
+                 countdown_file="resources/countdown_675_1080_reduced.mp4", top_text_size=(1060, 400),
+                 top_text_pos=(10, 30), bot_text_size=(1060, 400), bot_text_pos=(10, 1490),
                  frame_preview_size=(1014, 540), frame_preview_pos=(33, 500), frame_preview_timeout=2.0,
                  font="resources/tahoma_font.ttf", font_size=130,
                  output_image_background_filename="resources/pasek.png",
@@ -355,6 +369,7 @@ class MainWindow:
         self.frame_preview_timeout = frame_preview_timeout
 
         self.camera_control = camera_control
+        self.flash_control = flash_control
 
         self.photo_main_screen = None
 
@@ -443,125 +458,129 @@ class MainWindow:
         rate = Rate(self.fps)
         frame = self.empty_background.copy()
         while True:
+            try:
+                if self.current_state == States.HOME:
+                    frame = self.handle_home()
 
-            if self.current_state == States.HOME:
-                frame = self.handle_home()
+                elif self.current_state == States.PREPARE:
+                    if self.photo_main_screen is None:
+                        self.photo_main_screen = self.generate_photo_main_screen("Przygotuj się do\nzdjęcia!",
+                                                                                 self.bot_texts[
+                                                                                     self.current_texts_bot_id[0]]
+                                                                                 + "\nZdjęcie nr 1", None)
+                    frame = self.photo_main_screen
 
-            elif self.current_state == States.PREPARE:
-                if self.photo_main_screen is None:
-                    self.photo_main_screen = self.generate_photo_main_screen("Przygotuj się do\nzdjęcia!",
-                                                                             self.bot_texts[
-                                                                                 self.current_texts_bot_id[0]]
-                                                                             + "\nZdjęcie nr 1", None)
-                frame = self.photo_main_screen
+                    if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
+                        self.current_state = States.COUNTDOWN_1
 
-                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
-                    self.current_state = States.COUNTDOWN_1
+                elif self.current_state == States.PHOTO_1:
+                    if self.photo_main_screen is None:
+                        self.photo_main_screen = self.generate_photo_main_screen(
+                            self.top_texts[self.current_texts_top_id[1]],
+                            self.bot_texts[self.current_texts_bot_id[1]]
+                            + "\nZdjęcie nr 2", self.frame_1.copy())
+                    frame = self.photo_main_screen
 
-            elif self.current_state == States.PHOTO_1:
-                if self.photo_main_screen is None:
-                    self.photo_main_screen = self.generate_photo_main_screen(
-                        self.top_texts[self.current_texts_top_id[1]],
-                        self.bot_texts[self.current_texts_bot_id[1]]
-                        + "\nZdjęcie nr 2", self.frame_1.copy())
-                frame = self.photo_main_screen
+                    if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
+                        self.current_state = States.COUNTDOWN_2
 
-                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
-                    self.current_state = States.COUNTDOWN_2
+                elif self.current_state == States.PHOTO_2:
+                    if self.photo_main_screen is None:
+                        self.photo_main_screen = self.generate_photo_main_screen(
+                            self.top_texts[self.current_texts_top_id[2]],
+                            self.bot_texts[self.current_texts_bot_id[2]]
+                            + "\nZdjęcie nr 3", self.frame_2.copy())
+                    frame = self.photo_main_screen
 
-            elif self.current_state == States.PHOTO_2:
-                if self.photo_main_screen is None:
-                    self.photo_main_screen = self.generate_photo_main_screen(
-                        self.top_texts[self.current_texts_top_id[2]],
-                        self.bot_texts[self.current_texts_bot_id[2]]
-                        + "\nZdjęcie nr 3", self.frame_2.copy())
-                frame = self.photo_main_screen
+                    if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
+                        self.current_state = States.COUNTDOWN_3
 
-                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout:
-                    self.current_state = States.COUNTDOWN_3
+                elif self.current_state == States.PHOTO_3:
+                    if self.photo_main_screen is None:
+                        self.photo_main_screen = self.generate_photo_main_screen(
+                            self.top_texts[self.current_texts_top_id[3]],
+                            None, self.frame_3.copy())
+                    frame = self.photo_main_screen
+                    if time.time() - self.frame_preview_time_start > self.frame_preview_timeout / 2:
+                        self.generate_output_image()
+                        self.save_images()
+                        self.photo_main_screen = None
+                        self.current_state = States.CONFIRM_PRINT
+                        self.frame_preview_time_start = time.time()
 
-            elif self.current_state == States.PHOTO_3:
-                if self.photo_main_screen is None:
-                    self.photo_main_screen = self.generate_photo_main_screen(
-                        self.top_texts[self.current_texts_top_id[3]],
-                        None, self.frame_3.copy())
-                frame = self.photo_main_screen
-                if time.time() - self.frame_preview_time_start > self.frame_preview_timeout / 2:
-                    self.generate_output_image()
-                    self.save_images()
-                    self.photo_main_screen = None
-                    self.current_state = States.CONFIRM_PRINT
-                    self.frame_preview_time_start = time.time()
+                elif self.current_state == States.COUNTDOWN_1 or self.current_state == States.COUNTDOWN_2 or \
+                        self.current_state == States.COUNTDOWN_3:
+                    frame, done = self.handle_countdown()
 
-            elif self.current_state == States.COUNTDOWN_1 or self.current_state == States.COUNTDOWN_2 or \
-                    self.current_state == States.COUNTDOWN_3:
-                frame, done = self.handle_countdown()
+                    if done:
+                        self.camera_control.start_photo()
 
-                if done:
-                    self.camera_control.start_photo()
+                        while not self.camera_control.is_done():
+                            time.sleep(0.05)
 
-                    while not self.camera_control.is_done():
-                        time.sleep(0.05)
+                        if self.current_state == States.COUNTDOWN_1:
+                            self.frame_1 = self.camera_control.get_photo()
+                            self.current_state = States.PHOTO_1
+                        elif self.current_state == States.COUNTDOWN_2:
+                            self.frame_2 = self.camera_control.get_photo()
+                            self.current_state = States.PHOTO_2
+                        elif self.current_state == States.COUNTDOWN_3:
+                            self.frame_3 = self.camera_control.get_photo()
+                            self.current_state = States.PHOTO_3
 
-                    if self.current_state == States.COUNTDOWN_1:
-                        self.frame_1 = self.camera_control.get_photo()
-                        self.current_state = States.PHOTO_1
-                    elif self.current_state == States.COUNTDOWN_2:
-                        self.frame_2 = self.camera_control.get_photo()
-                        self.current_state = States.PHOTO_2
-                    elif self.current_state == States.COUNTDOWN_3:
-                        self.frame_3 = self.camera_control.get_photo()
-                        self.current_state = States.PHOTO_3
+                        self.frame_preview_time_start = time.time()
+                        self.countdown_resource_id = 0
+                        self.photo_main_screen = None
 
-                    self.frame_preview_time_start = time.time()
-                    self.countdown_resource_id = 0
-                    self.photo_main_screen = None
+                elif self.current_state == States.CONFIRM_PRINT:
+                    if self.photo_main_screen is None:
+                        self.photo_main_screen = self.generate_photo_confirm_screen \
+                            ("Wciśnij przycisk,\naby wydrukować!\nPoczekaj " + str(self.print_confirm_timeout) +
+                             " sekund,\naby anulować!", self.output_image.copy())
 
-            elif self.current_state == States.CONFIRM_PRINT:
-                if self.photo_main_screen is None:
-                    self.photo_main_screen = self.generate_photo_confirm_screen \
-                        ("Wciśnij przycisk,\naby wydrukować!\nPoczekaj " + str(self.print_confirm_timeout) +
-                         " sekund,\naby anulować!", self.output_image.copy())
+                    frame = self.photo_main_screen
 
-                frame = self.photo_main_screen
+                    if time.time() - self.frame_preview_time_start > self.print_confirm_timeout:
+                        self.reset()
 
-                if time.time() - self.frame_preview_time_start > self.print_confirm_timeout:
-                    self.reset()
+                elif self.current_state == States.PRINT:
+                    if self.photo_main_screen is None or self.update_print_screen or self.printer.changed():
+                        text = "Wciśnij przycisk,\naby wydrukować\nwięcej kopii!\nDrukuję " + \
+                               str(self.how_many_prints - self.printer.get_print_size()) + " z " + \
+                               str(self.how_many_prints) + "..."
 
-            elif self.current_state == States.PRINT:
-                if self.photo_main_screen is None or self.update_print_screen or self.printer.changed():
-                    text = "Wciśnij przycisk,\naby wydrukować\nwięcej kopii!\nDrukuję " + \
-                           str(self.how_many_prints - self.printer.get_print_size()) + " z " + \
-                           str(self.how_many_prints) + "..."
+                        self.photo_main_screen = self.generate_photo_confirm_screen(text, self.output_image.copy())
+                        self.update_print_screen = False
 
-                    self.photo_main_screen = self.generate_photo_confirm_screen(text, self.output_image.copy())
-                    self.update_print_screen = False
+                    frame = self.photo_main_screen
 
-                frame = self.photo_main_screen
+                    if self.printer.is_done():
+                        self.reset()
 
-                if self.printer.is_done():
-                    self.reset()
+                if self.show_sleep_time:
+                    sleep_millis = rate.get_remaining_time_millis_cv2()
+                    empty = np.zeros((40, 40, 3), np.uint8)
+                    frame[:40, :40] = empty
+                    cv2.putText(frame, str(sleep_millis), (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, 2)
 
-            if self.show_sleep_time:
+                if self.size_down_view:
+                    frame = cv2.resize(frame, (int(self.width / 2), int(self.height / 2)))
+                cv2.imshow("window", frame)
+
                 sleep_millis = rate.get_remaining_time_millis_cv2()
-                empty = np.zeros((40, 40, 3), np.uint8)
-                frame[:40, :40] = empty
-                cv2.putText(frame, str(sleep_millis), (5, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 1, 2)
 
-            if self.size_down_view:
-                frame = cv2.resize(frame, (int(self.width / 2), int(self.height / 2)))
-            cv2.imshow("window", frame)
+                key = cv2.waitKey(sleep_millis)
+                rate.update_last_time()
 
-            sleep_millis = rate.get_remaining_time_millis_cv2()
+                if key == ord("q"):
+                    print("Closing!")
+                    break
+                elif key == ord(" "):
+                    self.button_click()
 
-            key = cv2.waitKey(sleep_millis)
-            rate.update_last_time()
-
-            if key == ord("q"):
-                print("Closing!")
-                break
-            elif key == ord(" "):
-                self.button_click()
+            except Exception as e:
+                print("Main window exception occurred: ", str(e))
+                traceback.print_exc()
 
     def generate_photo_confirm_screen(self, bot_text, preview):
         frame = self.empty_background.copy()
@@ -683,9 +702,10 @@ class MainWindow:
 
         if self.current_state == States.HOME:
             if time.time() - self.last_use_time > 600:
-                self.camera_control.flash_control.start_flash()
+                self.flash_control.start_flash()
                 time.sleep(0.5)
-                self.camera_control.flash_control.start_flash()
+                self.flash_control.start_flash()
+            self.flash_control.start_flash()
 
             self.current_state = States.PREPARE
             self.frame_preview_time_start = time.time()
@@ -774,24 +794,24 @@ if __name__ == "__main__":
     if not data["flash"]["disable_flash"]:
         import RPi.GPIO as GPIO
 
-    printer_control = PrinterControl(wait_for_print=data["printer"]["wait_for_print"],
-                                     disable_printer=data["printer"]["disable_printer"])
+    printerControl = PrinterControl(wait_for_print=data["printer"]["wait_for_print"],
+                                    disable_printer=data["printer"]["disable_printer"])
 
-    flash_control = FlashControl(gpio_pin=data["flash"]["gpio_pin"],
-                                 sleep_before_flash=data["flash"]["sleep_before_flash"],
-                                 disable_flash=data["flash"]["disable_flash"])
+    flashControl = FlashControl(gpio_pin=data["flash"]["gpio_pin"],
+                                sleep_before_flash=data["flash"]["sleep_before_flash"],
+                                disable_flash=data["flash"]["disable_flash"])
 
-    camera_control = CameraControl(flash_control, frame_rate=data["camera"]["frame_rate"],
-                                   exposure_time=data["camera"]["exposure_time"],
-                                   analogue_gain=data["camera"]["analogue_gain"],
-                                   size=data["camera"]["size"],
-                                   img_format=data["camera"]["img_format"],
-                                   horizontal_flip=data["camera"]["horizontal_flip"],
-                                   print_fps=data["camera"]["print_fps"],
-                                   show_preview=data["camera"]["show_preview"],
-                                   disable_camera=data["camera"]["disable_camera"])
+    cameraControl = CameraControl(flashControl, frame_rate=data["camera"]["frame_rate"],
+                                  exposure_time=data["camera"]["exposure_time"],
+                                  analogue_gain=data["camera"]["analogue_gain"],
+                                  size=data["camera"]["size"],
+                                  img_format=data["camera"]["img_format"],
+                                  horizontal_flip=data["camera"]["horizontal_flip"],
+                                  print_fps=data["camera"]["print_fps"],
+                                  show_preview=data["camera"]["show_preview"],
+                                  disable_camera=data["camera"]["disable_camera"])
 
-    main_window = MainWindow(camera_control, printer_control,
+    main_window = MainWindow(cameraControl, flashControl, printerControl,
                              size=data["main_window"]["size"],
                              fps=data["main_window"]["fps"],
                              home_file=data["main_window"]["home_file"],
@@ -830,8 +850,8 @@ if __name__ == "__main__":
                              size_down_view=data["main_window"]["size_down_view"])
     main_window.run()
 
-    flash_control.close()
-    printer_control.close()
-    camera_control.close()
+    flashControl.close()
+    printerControl.close()
+    cameraControl.close()
 
     cv2.destroyAllWindows()
