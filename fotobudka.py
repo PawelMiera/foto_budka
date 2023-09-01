@@ -142,7 +142,11 @@ class CameraControl:
                             self.last_frame = cv2.flip(self.last_frame, 1)
                     else:
                         self.flash_control.start_flash()
-                        self.last_frame = np.ones((self.size[1], self.size[0], 3), np.uint8) * 255
+                        ones = np.ones((self.size[1], self.size[0], 1), np.uint8) * 255
+                        zeros = np.zeros((self.size[1], self.size[0], 1), np.uint8)
+
+                        frame = cv2.merge([zeros, zeros, ones])
+                        self.last_frame = frame
 
                     self.photo_done_event.set()
                 else:

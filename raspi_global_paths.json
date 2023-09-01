@@ -1,12 +1,12 @@
 {
     "camera": {
         "size": [
-            2028,
+            1980,
             1080
         ],
         "frame_rate": 5,
-        "exposure_time": 300000,
-        "analogue_gain": 8.0,
+        "exposure_time": 330000,
+        "analogue_gain": 10.0,
         "img_format": "RGB888",
         "horizontal_flip": true,
         "print_fps": false,
@@ -16,13 +16,13 @@
     },
     "flash": {
         "gpio_pin": 22,
-        "sleep_before_flash": 0.02,
+        "sleep_before_flash": 0.015,
         "disable_flash": false
     },
     "printer": {
         "default_how_many_prints": 2,
         "max_prints": 5,
-        "wait_for_print": 50.0,
+        "wait_for_print": 60.0,
         "disable_printer": false
     },
     "main_window": {
@@ -30,16 +30,16 @@
         "fps": 30,
         "home_file": "/home/pi/foto_budka/resources/fotobudka_home.mp4",
         "countdown_file": "/home/pi/foto_budka/resources/odliczanie.mp4",
-        "output_image_background_filename": "/home/pi/foto_budka/resources/pasek.png",
+        "output_image_background_filename": "/home/pi/foto_budka/resources/pasek_paulina_michal2.png",
         "print_background_filename": "/home/pi/foto_budka/resources/print_background.png",
         "save_path": "/home/pi/foto_budka/saved_images",
         "print_confirm_timeout": 15,
         "output_image_size": [620, 1748],
         "print_image_size": [1240, 1748],
-        "small_img_size": [573, 343],
-        "small_img_1_pos": [22, 103],
-        "small_img_2_pos": [22, 533],
-        "small_img_3_pos": [22, 963],
+        "small_img_size": [543, 326],
+        "small_img_1_pos": [39, 116],
+        "small_img_2_pos": [39, 522],
+        "small_img_3_pos": [39, 928],
         "font_size": 130,
         "font": "/home/pi/foto_budka/resources/tahoma_font.ttf",
         "top_text_size": [1060, 400],
@@ -48,7 +48,7 @@
         "bot_text_pos": [10, 820],
         "frame_preview_size": [1014, 540],
         "frame_preview_pos": [33, 240],
-        "frame_preview_timeout": 2.0,
+        "frame_preview_timeout": 10.0,
         "confirm_text_font_size": 100,
         "confirm_text_size": [1060, 600],
         "confirm_text_pos": [10, 1250],
@@ -56,7 +56,7 @@
         "confirm_img_preview_pos": [323, 10],
         "increase_preview_brightness": true,
         "preview_contrast_value": 3,
-        "preview_brightness_value": 10,
+        "preview_brightness_value": 8,
         "show_sleep_time": false,
         "disable_fullscreen": false,
         "size_down_view": false
