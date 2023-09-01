@@ -55,8 +55,8 @@
         "confirm_img_preview_size": [434, 1224],
         "confirm_img_preview_pos": [323, 10],
         "increase_preview_brightness": true,
-        "preview_contrast_value": 2,
-        "preview_brightness_value": 4,
+        "preview_contrast_value": 3,
+        "preview_brightness_value": 2,
         "show_sleep_time": false,
         "disable_fullscreen": false,
         "size_down_view": false
